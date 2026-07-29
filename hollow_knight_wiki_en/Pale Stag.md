@@ -1,3 +1,0 @@
-# Pale Stag
-
-

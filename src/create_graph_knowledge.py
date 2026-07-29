@@ -4,19 +4,21 @@ import ollama
 import json
 import time
 import networkx as nx
+import re
 
 # important parameters to do chunking in big files (all values are counting the characters)
 CHUNK_THRESHOLD = 4000
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 250
 
-MODEL = 'mistral:7b-q4_K_M'
+MODEL = "mistral:7b-instruct-v0.3-q4_K_M"
 PATH_KNOWLEDGE_GRAPH = 'data/knowledge_graph_hk.json'
 
 EXPLANATION_PROMPT = '''
 You are an expert at extracting structured knowledge from texts about Hollow Knight.
 Given a text, extract all entities and their relationships.
-Respond ONLY with valid JSON. No markdown, no code fences.'''
+Respond ONLY with valid JSON. No markdown, no code fences.
+Start your response with '{' and end with '}'. Return a JSON object.'''
 
 EXTRACTION_ONTOLOGIES_PROMPT = '''
 Extract entities and relations from this text about Hollow Knight.
@@ -121,22 +123,36 @@ def process_file(file_path : str):
 
     extract_ontologies(content_chunked)
 
+def extract_json_from_text(text: str) -> dict:
+    text = text.strip()
+    if text.startswith('"entities"') or text.startswith('"relations"'):
+        text = '{' + text + '}'
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        clean_json = match.group(0)
+        return json.loads(clean_json)
+
+    raise ValueError(f"Could not extract valid JSON from response: {text[:100]}...")
+
 def extract_entities_relationships(chunk : str) -> dict:
     response = ollama.chat(
         model=MODEL,
+        format="json",
         messages=[
             {'role': 'system', 'content': EXPLANATION_PROMPT},
-            {'role': 'user', 'content': EXTRACTION_ONTOLOGIES_PROMPT.format(chunk=chunk)}
+            {'role': 'user', 'content': EXTRACTION_ONTOLOGIES_PROMPT.replace('{chunk}', chunk)}
         ],
         options={'temperature': 0.1} # low temperature to greater robustness
     )
 
     raw = response['message']['content'].strip()
 
-    if raw.startswith('```'):
-        raw = raw.split('\n', 1)[1].rsplit('```', 1)[0].strip()
-
-    return json.loads(raw)
+    return extract_json_from_text(raw)
 
 
 def extract_with_gleanings(chunk: str, n: int = 3) -> dict:
@@ -175,18 +191,17 @@ def deduplicate_entities(graph: nx.DiGraph) -> nx.DiGraph:
         
         response = ollama.chat(
             model=MODEL,
+            format="json",
             messages=[{'role': 'user', 'content': REMOVE_DUPLICATES_PROMPT.format(names_list=names_list)}],
             options={'temperature': 0.0}
         )
         raw = response['message']['content'].strip()
-        if raw.startswith('```'):
-            raw = raw.split('\n', 1)[1].rsplit('```', 1)[0].strip()
 
         try:
-            mapping = json.loads(raw)
+            mapping = extract_json_from_text(raw)
             name_to_canonical.update(mapping)
-        except json.JSONDecodeError as e:
-            print(f'Dedup batch {i // 30 + 1} failed: {e}')
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Dedup batch {i // 30 + 1} failed: {e}")
 
     G = nx.DiGraph()
     for node, data in graph.nodes(data=True):

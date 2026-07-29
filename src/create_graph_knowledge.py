@@ -38,6 +38,7 @@ Guidelines:
 - Relation types should be short and descriptive (e.g., "is_located_in", "is_child_of")
 - Extract ALL entities mentioned, even minor ones
 - "section" will serve to add context to LLM, about the font of content
+- Ignore all accented or unusual letters you find and replace them with their respective common characters, for example: {"ç"="c","á"="a"}
 
 Text:
 {chunk}'''
@@ -60,10 +61,17 @@ Return format:
 '''
 
 def create_knowledge_graph(folder_path : str):
+    final_graph = nx.DiGraph()
     for root, _, files in os.walk(folder_path):
-        for file in files:
+        for i, file in enumerate(files):
+            print(f'Arquivo: {i+1} | {len(files)}')
             file_name = os.path.join(root, file)
-            process_file(file_name)
+            g = process_file(file_name)
+            if g:
+                final_graph = nx.compose(final_graph, g)
+                save_graph(final_graph, PATH_KNOWLEDGE_GRAPH)
+    final_graph = deduplicate_entities(final_graph)
+    save_graph(final_graph, PATH_KNOWLEDGE_GRAPH)
 
 def chunk_content(content : str) -> list[str]:
     content_chunked = list()
@@ -73,18 +81,16 @@ def chunk_content(content : str) -> list[str]:
 
     return content_chunked
 
-def extract_ontologies(chunks : list):
+def extract_ontologies(chunks : list) -> nx.DiGraph:
     ontologies = list()
 
     for i, chunk in enumerate(chunks):
         print(f'Processando chunk: {i+1}/{len(chunks)}')
         result = extract_with_gleanings(chunk, n=3)
         ontologies.append(result)
-        time.sleep(0.5)
+        time.sleep(1)
 
-    graph = build_graph_from_extractions(ontologies)
-    graph = deduplicate_entities(graph)
-    save_graph(graph, PATH_KNOWLEDGE_GRAPH)
+    return build_graph_from_extractions(ontologies)
 
 def build_graph_from_extractions(extractions: list[dict]) -> nx.DiGraph:
     g = nx.DiGraph()
@@ -108,7 +114,7 @@ def load_graph(path: str) -> nx.DiGraph:
         data = json.load(f)
     return nx.node_link_graph(data)
 
-def process_file(file_path : str):
+def process_file(file_path : str) -> nx.DiGraph:
     content = ''
     content_chunked = list()
 
@@ -121,7 +127,7 @@ def process_file(file_path : str):
     else:
         content_chunked.append(content + f'; font: {file_path}')
 
-    extract_ontologies(content_chunked)
+    return extract_ontologies(content_chunked)
 
 def extract_json_from_text(text: str) -> dict:
     text = text.strip()
@@ -171,6 +177,7 @@ def extract_with_gleanings(chunk: str, n: int = 3) -> dict:
                 all_relations.add(key)
         except Exception as e:
             print(f'Gleaning pass {i+1} failed: {e}')
+        time.sleep(0.5)
 
     return {
         'entities': list(all_entities.values()),

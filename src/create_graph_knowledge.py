@@ -1,10 +1,55 @@
 import os
 import math
+import ollama
+import json
+import time
+import networkx as nx
 
 # important parameters to do chunking in big files (all values are counting the characters)
 CHUNK_THRESHOLD = 4000
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 250
+
+MODEL = 'mistral:7b-q4_K_M'
+PATH_KNOWLEDGE_GRAPH = 'data/knowledge_graph_hk.json'
+
+EXPLANATION_PROMPT = '''
+You are an expert at extracting structured knowledge from texts about Hollow Knight.
+Given a text, extract all entities and their relationships.
+Respond ONLY with valid JSON. No markdown, no code fences.'''
+
+EXTRACTION_ONTOLOGIES_PROMPT = '''
+Extract entities and relations from this text about Hollow Knight.
+
+Return a JSON object with this exact structure:
+{
+  "entities": [
+    {"id": "Entity Name", "type": "character|location|item|concept|event|organization", "section": "file_from_was_extracted"}
+  ],
+  "relations": [
+    {"source": "Entity Name", "target": "Entity Name", "type": "relation_description"}
+  ]
+}
+
+Guidelines:
+- Entity IDs should be the canonical name (e.g., "The Knight", "Hornet", "Hallownest")
+- Relation types should be short and descriptive (e.g., "is_located_in", "is_child_of")
+- Extract ALL entities mentioned, even minor ones
+- "section" will serve to add context to LLM, about the font of content
+
+Text:
+{chunk}'''
+
+REMOVE_DUPLICATES_PROMPT = '''Given these entity names from a Hollow Knight knowledge graph,
+identify which ones refer to the SAME entity (case-insensitive, aliases,
+Portuguese/English variations). Return a JSON object mapping each name
+to its canonical form.
+
+Names:
+{names_list}
+
+Return format:
+{{"Knight": "The Knight", "the knight": "The Knight", ...}}'''
 
 '''
 #
@@ -18,7 +63,7 @@ def create_knowledge_graph(folder_path : str):
             file_name = os.path.join(root, file)
             process_file(file_name)
 
-def chunk_content(content : str) -> list:
+def chunk_content(content : str) -> list[str]:
     content_chunked = list()
 
     for i in range(math.ceil(len(content) / CHUNK_SIZE)):
@@ -26,8 +71,40 @@ def chunk_content(content : str) -> list:
 
     return content_chunked
 
-def extrating_ontologies(chunks : list):
-    print(chunks)
+def extract_ontologies(chunks : list):
+    ontologies = list()
+
+    for i, chunk in enumerate(chunks):
+        print(f'Processando chunk: {i+1}/{len(chunks)}')
+        result = extract_with_gleanings(chunk, n=3)
+        ontologies.append(result)
+        time.sleep(0.5)
+
+    graph = build_graph_from_extractions(ontologies)
+    graph = deduplicate_entities(graph)
+    save_graph(graph, PATH_KNOWLEDGE_GRAPH)
+
+def build_graph_from_extractions(extractions: list[dict]) -> nx.DiGraph:
+    g = nx.DiGraph()
+
+    for extraction in extractions:
+        for entity in extraction.get('entities', []):
+            g.add_node(entity.get('id'), type=entity.get('type'))
+
+        for rel in extraction.get('relations', []):
+            g.add_edge(rel.get('source'), rel.get('target'), type=rel.get('type'))
+
+    return g
+
+def save_graph(graph: nx.DiGraph, path: str):
+    data = nx.node_link_data(graph)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def load_graph(path: str) -> nx.DiGraph:
+    with open(path) as f:
+        data = json.load(f)
+    return nx.node_link_graph(data)
 
 def process_file(file_path : str):
     content = ''
@@ -37,11 +114,94 @@ def process_file(file_path : str):
         content = f.read()
 
     if len(content) > CHUNK_THRESHOLD: # process big files with chunking
-        content_chunked = chunk_content(content)
+        result = chunk_content(content)
+        content_chunked = [(chunk + f'; font: {file_path}') for chunk in result]
     else:
-        content_chunked.append(content)
+        content_chunked.append(content + f'; font: {file_path}')
 
-    extrating_ontologies(content_chunked)
+    extract_ontologies(content_chunked)
+
+def extract_entities_relationships(chunk : str) -> dict:
+    response = ollama.chat(
+        model=MODEL,
+        messages=[
+            {'role': 'system', 'content': EXPLANATION_PROMPT},
+            {'role': 'user', 'content': EXTRACTION_ONTOLOGIES_PROMPT.format(chunk=chunk)}
+        ],
+        options={'temperature': 0.1} # low temperature to greater robustness
+    )
+
+    raw = response['message']['content'].strip()
+
+    if raw.startswith('```'):
+        raw = raw.split('\n', 1)[1].rsplit('```', 1)[0].strip()
+
+    return json.loads(raw)
+
+
+def extract_with_gleanings(chunk: str, n: int = 3) -> dict:
+    all_entities = {}
+    all_relations = set()
+
+    for i in range(n):
+        try:
+            result = extract_entities_relationships(chunk)
+            for e in result.get('entities', []):
+                eid = e.get('id')
+                if eid and eid not in all_entities:
+                    all_entities[eid] = e
+            for r in result.get('relations', []):
+                key = (r.get('source'), r.get('target'), r.get('type'))
+                all_relations.add(key)
+        except Exception as e:
+            print(f'Gleaning pass {i+1} failed: {e}')
+
+    return {
+        'entities': list(all_entities.values()),
+        'relations': [
+            {'source': s, 'target': t, 'type': r}
+            for s, t, r in all_relations
+        ]
+    }
+
+
+def deduplicate_entities(graph: nx.DiGraph) -> nx.DiGraph:
+    entities = list(graph.nodes(data=True))
+    name_to_canonical = {}
+
+    for i in range(0, len(entities), 30):
+        batch = [name for name, _ in entities[i:i + 30]]
+        names_list = '\n'.join(f'- {name}' for name in batch)
+        
+        response = ollama.chat(
+            model=MODEL,
+            messages=[{'role': 'user', 'content': REMOVE_DUPLICATES_PROMPT.format(names_list=names_list)}],
+            options={'temperature': 0.0}
+        )
+        raw = response['message']['content'].strip()
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[1].rsplit('```', 1)[0].strip()
+
+        try:
+            mapping = json.loads(raw)
+            name_to_canonical.update(mapping)
+        except json.JSONDecodeError as e:
+            print(f'Dedup batch {i // 30 + 1} failed: {e}')
+
+    G = nx.DiGraph()
+    for node, data in graph.nodes(data=True):
+        canonical = name_to_canonical.get(node, node)
+        if canonical not in G:
+            G.add_node(canonical, **data)
+
+    for a, b, data in graph.edges(data=True):
+        can_a = name_to_canonical.get(a, a)
+        can_b = name_to_canonical.get(b, b)
+        if can_a != can_b:
+            G.add_edge(can_a, can_b, **data)
+
+    return G
+
 
 '''
 #
@@ -49,6 +209,6 @@ def process_file(file_path : str):
 #
 '''
 
-wiki_path = 'data/hollow_knight_wiki_pt'
-
-create_knowledge_graph(wiki_path)
+if __name__ == '__main__':
+    wiki_path = 'data/hollow_knight_wiki_pt'
+    create_knowledge_graph(wiki_path)

@@ -248,5 +248,5 @@ def deduplicate_entities(graph: nx.DiGraph) -> nx.DiGraph:
 '''
 
 if __name__ == '__main__':
-    wiki_path = 'data/hollow_knight_wiki_pt'
+    wiki_path = 'data/hollow_knight_wiki_knowledge_pt'
     create_knowledge_graph(wiki_path)

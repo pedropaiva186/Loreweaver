@@ -1,3 +1,0 @@
-# O Buscador de Deuses
-
-

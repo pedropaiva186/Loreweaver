@@ -1,3 +1,0 @@
-# Óleo do Mestre Alfineteiro
-
-

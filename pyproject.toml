@@ -3,7 +3,8 @@ name = "loreweaver"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "pedropaiva186",email = "pedrohenriq1860@gmail.com", name = "henriquesantos007",email = "henriquesantos.sje@gmail.com"}
+    {name = "pedropaiva186",email = "pedrohenriq1860@gmail.com"},
+    {name = "henriquesantos007",email = "henriquesantos.sje@gmail.com"}
 ]
 license = "MIT"
 readme = "README.md"

@@ -5,11 +5,12 @@ import json
 import time
 import networkx as nx
 import re
+from json_repair import repair_json
 
 # important parameters to do chunking in big files (all values are counting the characters)
-CHUNK_THRESHOLD = 4000
-CHUNK_SIZE = 2000
-CHUNK_OVERLAP = 250
+CHUNK_THRESHOLD = 3500
+CHUNK_SIZE = 1500
+CHUNK_OVERLAP = 200
 
 MODEL = "mistral:7b-instruct-v0.3-q4_K_M"
 PATH_KNOWLEDGE_GRAPH = 'data/knowledge_graph_hk.json'
@@ -21,26 +22,27 @@ Respond ONLY with valid JSON. No markdown, no code fences.
 Start your response with '{' and end with '}'. Return a JSON object.'''
 
 EXTRACTION_ONTOLOGIES_PROMPT = '''
-Extract entities and relations from this text about Hollow Knight.
+Extract all entities and relations from the text about Hollow Knight.
 
-Return a JSON object with this exact structure:
-{
+Return ONLY a valid, single JSON object. Do not output any thinking process, text, or explanations outside the JSON.
+
+Expected JSON Structure:
+{{
   "entities": [
-    {"id": "Entity Name", "type": "character|location|item|concept|event|organization", "section": "file_from_was_extracted"}
+    {{"id": "Entity Name", "type": "character|location|item|concept|event|organization", "section": "{section_name}"}}
   ],
   "relations": [
-    {"source": "Entity Name", "target": "Entity Name", "type": "relation_description"}
+    {{"source": "Entity Name", "target": "Entity Name", "type": "relation_description"}}
   ]
-}
+}}
 
 Guidelines:
-- Entity IDs should be the canonical name (e.g., "The Knight", "Hornet", "Hallownest")
-- Relation types should be short and descriptive (e.g., "is_located_in", "is_child_of")
-- Extract ALL entities mentioned, even minor ones
-- "section" will serve to add context to LLM, about the font of content
-- Ignore all accented or unusual letters you find and replace them with their respective common characters, for example: {"ç"="c","á"="a"}
+1. Entity IDs must use canonical, standard names (e.g., "The Knight", "Hornet", "Hallownest").
+2. Relation types must be short, lowercase, and descriptive with underscores (e.g., "is_located_in", "is_child_of", "defeats").
+3. Replace special/accented characters with standard ASCII equivalents (e.g., convert "ç" to "c", "á" to "a").
+4. If no entities or relations are found, return empty lists: {{"entities": [], "relations": []}}.
 
-Text:
+Text to process:
 {chunk}'''
 
 REMOVE_DUPLICATES_PROMPT = '''Given these entity names from a Hollow Knight knowledge graph,
@@ -64,6 +66,8 @@ def create_knowledge_graph(folder_path : str):
     final_graph = nx.DiGraph()
     for root, _, files in os.walk(folder_path):
         for i, file in enumerate(files):
+            if i % 8 == 0:
+                time.sleep(5)
             print(f'Arquivo: {i+1} | {len(files)}')
             file_name = os.path.join(root, file)
             g = process_file(file_name)
@@ -86,7 +90,7 @@ def extract_ontologies(chunks : list) -> nx.DiGraph:
 
     for i, chunk in enumerate(chunks):
         print(f'Processando chunk: {i+1}/{len(chunks)}')
-        result = extract_with_gleanings(chunk, n=3)
+        result = extract_with_gleanings(chunk, n=2)
         ontologies.append(result)
         time.sleep(1)
 
@@ -132,18 +136,24 @@ def process_file(file_path : str) -> nx.DiGraph:
 def extract_json_from_text(text: str) -> dict:
     text = text.strip()
     if text.startswith('"entities"') or text.startswith('"relations"'):
-        text = '{' + text + '}'
+        text = "{" + text + "}"
+
     try:
         return json.loads(text)
-    except json.JSONDecodeError:
+    except Exception:
         pass
 
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if match:
-        clean_json = match.group(0)
-        return json.loads(clean_json)
+        text = match.group(0)
 
-    raise ValueError(f"Could not extract valid JSON from response: {text[:100]}...")
+    try:
+        repaired = repair_json(text)
+        return json.loads(repaired)
+    except Exception as e:
+        raise ValueError(
+            f"Could not extract valid JSON from response: {text[:100]}... Error: {e}"
+        )
 
 def extract_entities_relationships(chunk : str) -> dict:
     response = ollama.chat(
@@ -153,7 +163,13 @@ def extract_entities_relationships(chunk : str) -> dict:
             {'role': 'system', 'content': EXPLANATION_PROMPT},
             {'role': 'user', 'content': EXTRACTION_ONTOLOGIES_PROMPT.replace('{chunk}', chunk)}
         ],
-        options={'temperature': 0.1} # low temperature to greater robustness
+        keep_alive= -1, # keep the model in memory ever
+        options={
+            'num_ctx': 8192,
+            'num_predict': 2048,
+            'temperature': 0.1, # low temperature to greater robustness
+            'stop': ["```\n\n", "}\n\n"]
+        }
     )
 
     raw = response['message']['content'].strip()

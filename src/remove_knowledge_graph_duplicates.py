@@ -6,9 +6,9 @@ import re
 from tqdm import tqdm
 from json_repair import repair_json
 
-PATH_KNOWLEDGE_GRAPH = 'data/knowledge_graph_hk.json'
-PATH_DEDUP_GRAPH = 'data/knowledge_graph_hk_clean.json'
-CHECKPOINT_FILE = 'data/dedup_checkpoint.json'
+PATH_KNOWLEDGE_GRAPH = 'data/knowledge_graph_hk_clean.json'
+PATH_DEDUP_GRAPH = 'data/knowledge_graph_hk_clean_v2.json'
+CHECKPOINT_FILE = 'data/dedup_checkpoint_v2.json'
 MODEL = "mistral:7b-instruct-v0.3-q4_K_M"
 
 REMOVE_DUPLICATES_PROMPT = '''Given these entity names from a Hollow Knight knowledge graph,

@@ -8,9 +8,9 @@ import re
 from json_repair import repair_json
 
 # important parameters to do chunking in big files (all values are counting the characters)
-CHUNK_THRESHOLD = 3500
-CHUNK_SIZE = 1500
-CHUNK_OVERLAP = 200
+CHUNK_THRESHOLD = 4000
+CHUNK_SIZE = 2000
+CHUNK_OVERLAP = 250
 
 MODEL = "mistral:7b-instruct-v0.3-q4_K_M"
 PATH_KNOWLEDGE_GRAPH = 'data/knowledge_graph_hk.json'

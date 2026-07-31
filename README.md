@@ -41,7 +41,8 @@ O projeto utiliza a LLM Mistral. O modelo escolhido possui quantização de 4 bi
 Primeiro, instale o motor do Ollama no seu sistema (se ainda não tiver):
 
 ```Bash
-curl -fsSL [https://ollama.com/install.sh](https://ollama.com/install.sh) | sh
+sudo apt-get install zstdsudo apt-get install zstd
+curl -fsSL https://ollama.com/install.sh | sh
 ```
 Depois, baixe os pesos do modelo específico utilizado no código:
 

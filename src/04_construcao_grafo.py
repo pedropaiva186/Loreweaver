@@ -1,0 +1,55 @@
+"""Etapa 4 — Construção do grafo de conhecimento de Hollow Knight."""
+
+import json
+import networkx as nx
+from .util_comum import DIR_DADOS
+
+
+def carregar_triplas():
+    caminho = DIR_DADOS / "triplas_refinadas.json"
+    if not caminho.exists():
+        raise SystemExit(f"Arquivo não encontrado: {caminho}")
+    return json.loads(caminho.read_text(encoding='utf-8'))["triplas"]
+
+
+def construir_grafo(triplas):
+    g = nx.MultiDiGraph()
+    for n, t in enumerate(triplas):
+        g.add_node(t["origem"], label=t["origem"], tipo=t.get("tipo_origem", "?") )
+        g.add_node(t["destino"], label=t["destino"], tipo=t.get("tipo_destino", "?") )
+        g.add_edge(
+            t["origem"],
+            t["destino"],
+            key=f"e{n}",
+            label=t["relacao"],
+            relacao=t["relacao"],
+            fonte=t.get("fonte", "?"),
+            evidencia=t.get("evidencia", ""),
+        )
+    return g
+
+
+def main():
+    triplas = carregar_triplas()
+    g = construir_grafo(triplas)
+
+    print(f"Grafo construído: {g.number_of_nodes()} nós, {g.number_of_edges()} arestas\n")
+
+    por_tipo = {}
+    for no, dados in g.nodes(data=True):
+        por_tipo.setdefault(dados.get("tipo", "?"), []).append(no)
+    for tipo, nos in sorted(por_tipo.items()):
+        print(f"  {tipo}: {', '.join(sorted(nos))}")
+
+    print("\nNós mais conectados (grau total):")
+    graus = sorted(g.degree(), key=lambda x: -x[1])[:5]
+    for no, grau in graus:
+        print(f"  {no}: {grau}")
+
+    saida = DIR_DADOS / "grafo.graphml"
+    nx.write_graphml(g, saida)
+    print(f"\nGrafo salvo em {saida} (abra no yEd/Gephi para visualizar)")
+
+
+if __name__ == '__main__':
+    main()

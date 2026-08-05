@@ -35,7 +35,7 @@ Regras:
   - chefe
   - vendedor
   - grupo
-  - protagonista
+  - protagonista (Apenas o cavaleiro/knight é o protagonista)
 - Caso uma entidade possa pertencer a mais de um tipo, escolha o mais especifico.
   Exemplos:
   - Mercador -> vendedor

@@ -21,7 +21,9 @@ Responda APENAS com um JSON valido no seguinte formato:
 Regras:
 - Ignore acentos e cedilha.
 - Extraia apenas informacoes que estejam explicitamente presentes no texto.
-- Nao invente entidades nem relacoes.
+- Nao invente tipos novos de entidades nem de relacoes:
+  - I.E, se nao existir a relacao que você quer expressar, nao a invente.
+  - Alem disso, nao tente encaixar relacoes em tipos de relacao que nao se aplicam.
 - Sempre utilize exatamente um dos seguintes tipos canonicos de entidade:
   - item
   - local

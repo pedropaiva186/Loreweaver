@@ -6,18 +6,18 @@ from util_comum import carregar_corpus, dividir_em_chunks, chamar_modelo, escrev
 PROMPT_EXTRACAO = '''Voce e um extrator de conhecimento especializado em Hollow Knight.
 Extraia do texto abaixo TODAS as relacoes factuais entre entidades identificaveis.
 Responda APENAS com um JSON valido no seguinte formato:
-{
+{{
   "triplas": [
-    {
+    {{
       "origem": "...",
       "tipo_origem": "tipos canonicos de entidade",
       "relacao": "...",
       "destino": "...",
       "tipo_destino": "tipos canonicos de entidade",
       "evidencia": "trecho curto que justifica"
-    }
+    }}
   ]
-}
+}}
 Regras:
 - Ignore acentos e cedilha.
 - Extraia apenas informacoes que estejam explicitamente presentes no texto.

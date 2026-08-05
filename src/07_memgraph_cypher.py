@@ -1,18 +1,7 @@
-"""Etapa 7 (opcional) — O mesmo grafo em um banco de grafos: Memgraph + Cypher.
+"""Etapa 7 — O mesmo grafo em um banco de grafos: Memgraph + Cypher.
 
-O NetworkX é ótimo para entender o mecanismo, mas em produção o grafo mora
-em um banco de grafos. Este script:
-  1. Carrega as triplas refinadas no Memgraph (protocolo Bolt, driver neo4j)
-  2. Executa as consultas da etapa 5 reescritas em Cypher
-  3. Demonstra text-to-Cypher: o LLM traduz a pergunta em linguagem natural
-     para uma consulta Cypher, que é executada no banco
-
-Pré-requisito (Docker):
-    docker run -it -p 7687:7687 -p 7444:7444 memgraph/memgraph-mage
-
-Uso:
-    python src/07_memgraph_cypher.py            # carga + consultas fixas
-    python src/07_memgraph_cypher.py --llm      # inclui text-to-Cypher
+Carrega as triplas refinadas no Memgraph usando Rótulos e Relações Nativas,
+executa consultas Cypher e demonstra text-to-Cypher com schema rigoroso.
 """
 
 import json
@@ -29,74 +18,78 @@ mod04 = import_module("04_construcao_grafo")
 
 URI = "bolt://localhost:7687"
 
+# Listas de validação/normalização conforme o seu schema
+ENTIDADES_VALIDAS = {
+    "item", "local", "npc", "conceito", "inimigo", 
+    "habilidade", "chefe", "vendedor", "grupo"
+}
+
+RELACOES_VALIDAS = {
+    "contem", "derrota", "usa", "localizado_em", "afeta", "requer",
+    "executa_habilidade", "leva_a", "vende", "dropa", "libera",
+    "cria", "eh_inimigo_de", "eh_relatado_por", "eh_membro_de", "protege"
+}
+
+def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
+    """Sanitiza strings para uso seguro como Rótulos ou Tipos de Aresta no Cypher."""
+    if not texto:
+        return padrao
+    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
+    return limpo.upper() if limpo else padrao
+
 CONSULTAS_CYPHER = {
-    "Chefes derrotados pelo Cavaleiro": """
-        MATCH (cavaleiro:ENTIDADE {nome: 'Cavaleiro'})-[r:RELACAO]->(chefe:ENTIDADE)
-        WHERE r.tipo IN ['derrota', 'luta_contra', 'combate_contra']
-        RETURN DISTINCT cavaleiro.nome AS heroi, chefe.nome AS chefe
+    "Chefes derrotados no jogo": """
+        MATCH (p)-[r:DERROTA]->(c:CHEFE)
+        RETURN DISTINCT p.nome AS heroi, c.nome AS chefe
         LIMIT 15
     """,
     
-    "Itens necessários para derrotar a Radiância": """
-        MATCH (item:ENTIDADE {tipo: 'item'})-[r:RELACAO]->(radiancia:ENTIDADE {nome: 'Radiancia'})
-        WHERE r.tipo IN ['requer', 'necessario_para', 'usa']
-        RETURN DISTINCT item.nome AS item
+    "Itens requeridos ou usados": """
+        MATCH (item:ITEM)-[r:REQUER|USA]->(destino)
+        RETURN DISTINCT item.nome AS item, type(r) AS relacao, destino.nome AS alvo
         LIMIT 10
     """,
     
-    "Locais conectados ao Cavaleiro": """
-        MATCH (cavaleiro:ENTIDADE {nome: 'Cavaleiro'})-[r:RELACAO]->(local:ENTIDADE {tipo: 'local'})
-        WHERE r.tipo IN ['localizado_em', 'leva_a', 'acesso_a']
-        RETURN DISTINCT cavaleiro.nome AS personagem, local.nome AS local
+    "Conexões de Locais": """
+        MATCH (origem:LOCAL)-[r:LEVA_A|LOCALIZADO_EM]->(destino:LOCAL)
+        RETURN DISTINCT origem.nome AS origem, type(r) AS relacao, destino.nome AS destino
         LIMIT 10
     """,
     
-    "Relações familiares de Hornet": """
-        MATCH (hornet:ENTIDADE {nome: 'Hornet'})-[r:RELACAO]->(familiar:ENTIDADE)
-        WHERE r.tipo IN ['filho', 'filha', 'irma', 'irmao', 'criada_por', 'treinada_por']
-        RETURN DISTINCT hornet.nome AS personagem, r.tipo AS tipo_relacao, familiar.nome AS familiar
+    "Itens vendidos por vendedores": """
+        MATCH (v:VENDEDOR)-[r:VENDE]->(item:ITEM)
+        RETURN DISTINCT v.nome AS vendedor, item.nome AS item
         LIMIT 10
     """,
 }
 
-PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que conhece EXATAMENTE este schema:
+PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que gera consultas para Memgraph/Neo4j.
 
-SCHEMA RIGOROSO:
-- TODOS os nós têm label :ENTIDADE (sem exceção!)
-- TODOS os nós têm propriedades: nome (string), tipo (string)
-- TODOS têm uma relação :RELACAO com propriedades: tipo (string), fonte (string), evidencia (string)
+SCHEMA DO BANCO:
+- ENTIDADES (Labels dos Nós em MAIÚSCULAS):
+  :ITEM, :LOCAL, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
 
-TIPOS CANÔNICOS DE NÓ (propriedade 'tipo'):
-  item, local, npc, conceito, inimigo, chefe, vendedor, grupo, habilidade, personagem, evento
+- PROPRIEDADES DOS NÓS:
+  {nome: "Nome da Entidade"}
 
-RELAÇÕES CANÔNICAS (propriedade 'tipo' da relação):
-  contem, derrota, usa, localizado_em, afeta, requer, executa_habilidade, leva_a, 
-  vende, dropa, libera, cria, eh_inimigo_de, eh_relatado_por, eh_membro_de, protege, 
-  filha_de, filho_de, irma, irmao, criada_por, treinada_por, luta_contra, combate_contra
+- RELAÇÕES (Tipos de Aresta em MAIÚSCULAS):
+  -[:CONTEM]->, -[:DERROTA]->, -[:USA]->, -[:LOCALIZADO_EM]->, -[:AFETA]->,
+  -[:REQUER]->, -[:EXECUTA_HABILIDADE]->, -[:LEVA_A]->, -[:VENDE]->, -[:DROPA]->,
+  -[:LIBERA]->, -[:CRIA]->, -[:EH_INIMIGO_DE]->, -[:EH_RELATADO_POR]->,
+  -[:EH_MEMBRO_DE]->, -[:PROTEGE]->
 
-PADRÃO DE CONSULTA (SEMPRE use este padrão):
-  MATCH (origem:ENTIDADE {{nome: "Origem", tipo: "tipo1"}})-[r:RELACAO]-(destino:ENTIDADE {{tipo: "tipo2"}})
-  WHERE r.tipo = "relacao_especifica"
-  RETURN DISTINCT origem.nome, destino.nome, r.tipo
+EXEMPLOS DE CONSULTAS CORRETAS:
+1. "O que o vendedor vende?"
+   MATCH (v:VENDEDOR)-[:VENDE]->(i:ITEM) RETURN v.nome, i.nome
 
-EXEMPLOS CORRETOS:
-1. Mãe do Cavaleiro:
-   MATCH (cav:ENTIDADE {{nome: "Cavaleiro"}})-[r:RELACAO]-(mae:ENTIDADE)
-   WHERE r.tipo IN ["filha_de", "filho_de"]
-   RETURN DISTINCT mae.nome
-
-2. Itens para derrotar Radiância:
-   MATCH (item:ENTIDADE {{tipo: "item"}})-[r:RELACAO]-(rad:ENTIDADE {{nome: "Radiancia"}})
-   WHERE r.tipo = "requer"
-   RETURN DISTINCT item.nome
+2. "Quais locais estão contidos em outro?"
+   MATCH (l1:LOCAL)-[:LOCALIZADO_EM|CONTEM]->(l2:LOCAL) RETURN l1.nome, l2.nome
 
 REGRAS CRÍTICAS:
-- Use SEMPRE :ENTIDADE, NUNCA :ITEM, :CHEFE, :NPC, etc
-- Use SEMPRE {{nome: "..."}} para nomes específicos
-- Use SEMPRE {{tipo: "..."}} para filtros de tipo
-- Se não sabe o nome exato, use apenas tipo
-- Relações SEMPRE têm label :RELACAO
-- Responda APENAS com a query Cypher, sem markdown, sem explicações
+- Use Rótulos (:CHEFE, :ITEM) e Tipos de Aresta (-[:DERROTA]->) diretamente na sintaxe do Cypher.
+- NUNCA use :ENTIDADE ou :RELACAO genéricos.
+- NUNCA crie Rótulos ou Relações fora do schema acima.
+- Responda APENAS com o código Cypher puro, sem blocos de markdown e sem explicações.
 
 PERGUNTA: {pergunta}
 """
@@ -106,24 +99,36 @@ def carregar_no_memgraph(driver, triplas):
     with driver.session() as sessao:
         sessao.run("MATCH (n) DETACH DELETE n")
         for t in triplas:
+            # 1. Normaliza tipos de origem, destino e relação
+            raw_origem = t.get("tipo_origem", "conceito").lower()
+            raw_destino = t.get("tipo_destino", "conceito").lower()
+            raw_rel = t.get("relacao", "afeta").lower()
+
+            # Valida contra o schema (fallback para CONCEITO / AFETA se inválido)
+            label_origem = sanitizar_identificador(raw_origem if raw_origem in ENTIDADES_VALIDAS else "conceito")
+            label_destino = sanitizar_identificador(raw_destino if raw_destino in ENTIDADES_VALIDAS else "conceito")
+            tipo_relacao = sanitizar_identificador(raw_rel if raw_rel in RELACOES_VALIDAS else "afeta")
+
+            # 2. Insere usando Rótulos e Relação Nativos
+            query = f"""
+            MERGE (a:`{label_origem}` {{nome: $origem}})
+            MERGE (b:`{label_destino}` {{nome: $destino}})
+            MERGE (a)-[r:`{tipo_relacao}`]->(b)
+            SET r.fonte = $fonte, r.evidencia = $evidencia
+            """
+
             sessao.run(
-                """
-                MERGE (a:ENTIDADE {nome: $origem, tipo: $tipo_origem})
-                MERGE (b:ENTIDADE {nome: $destino, tipo: $tipo_destino})
-                MERGE (a)-[r:RELACAO {tipo: $relacao}]->(b)
-                SET r.fonte = $fonte, r.evidencia = $evidencia
-                """,
+                query,
                 origem=t["origem"],
-                tipo_origem=t.get("tipo_origem", "entidade"),
                 destino=t["destino"],
-                tipo_destino=t.get("tipo_destino", "entidade"),
-                relacao=t['relacao'],
                 fonte=t.get("fonte", "?"),
                 evidencia=t.get("evidencia", ""),
             )
+
         total = sessao.run("MATCH (n) RETURN count(n) AS n").single()["n"]
         rels = sessao.run("MATCH ()-[r]->() RETURN count(r) AS n").single()["n"]
-    print(f"Memgraph carregado: {total} nós, {rels} relações")
+    print(f"Memgraph carregado: {total} nós, {rels} relações com Rótulos Nativos!")
+
 
 def executar(driver, cypher):
     with driver.session() as sessao:
@@ -143,7 +148,7 @@ def gerar_cypher_com_llm(pergunta):
 
 
 def main():
-    triplas = mod04.carregar_triplas()  # Carrega as triplas do Hollow Knight
+    triplas = mod04.carregar_triplas()
     try:
         driver = GraphDatabase.driver(URI, auth=("", ""))
         driver.verify_connectivity()
@@ -155,44 +160,12 @@ def main():
 
     carregar_no_memgraph(driver, triplas)
 
-    # Consultas sobre a lore do Hollow Knight
-    consultas_lore = {
-        "Relações familiares do Cavaleiro": """
-            MATCH (cavaleiro:ENTIDADE {nome: 'Cavaleiro'})-[:RELACAO]->(parente)
-            WHERE parente.tipo IN ['personagem', 'PESSOA']
-            RETURN DISTINCT cavaleiro.nome AS entidade, parente.nome AS relacionado
-            LIMIT 10
-        """,
-        
-        "Personagens vs chefes (lutas)": """
-            MATCH (p:ENTIDADE)-[r:RELACAO]->(c:ENTIDADE)
-            WHERE r.tipo IN ['luta_contra', 'batalha_contra', 'combate_contra']
-            RETURN p.nome AS personagem, c.nome AS chefe
-            LIMIT 15
-        """,
-        
-        "Locais e seus significados": """
-            MATCH (local:ENTIDADE {tipo: 'local'})
-            RETURN local.nome AS local
-            LIMIT 10
-        """,
-        
-        "Itens e quem os possui": """
-            MATCH (item:ENTIDADE {tipo: 'item'})-[r]->(personagem:ENTIDADE)
-            RETURN DISTINCT 
-                item.nome AS item, 
-                personagem.nome AS dono,
-                type(r) AS tipo_relacao
-            LIMIT 10
-        """,
-    }
-
     print("=" * 80)
-    print("🎮 EXPLORADOR DA LORE - HOLLOW KNIGHT 🎮")
+    print("🎮 EXPLORADOR DA LORE — HOLLOW KNIGHT (CYPHER NATIVO) 🎮")
     print("=" * 80)
 
-    for titulo, cypher in consultas_lore.items():
-        print(f"\n[📖] {titulo}")
+    for titulo, cypher in CONSULTAS_CYPHER.items():
+        print(f"\n{titulo}")
         print("-" * 80)
         try:
             resultados = executar(driver, cypher)
@@ -202,34 +175,32 @@ def main():
             else:
                 print("  (sem resultados)")
         except Exception as e:
-            print(f"  ⚠️  Erro na consulta: {e}")
+            print(f"Erro na consulta: {e}")
 
-    # Text-to-Cypher: perguntas sobre a lore
     if "--llm" in sys.argv:
         perguntas = [
-            "Quem é a mãe do Cavaleiro?",
-            "Qual é a relação entre Hornet e o Cavaleiro?",
-            "Que itens são necessários para derrotar a Radiância?"
+            "Quais itens o vendedor vende?",
+            "Qual habilidade afeta ou derrota o chefe?",
+            "Quais inimigos estão em qual local?"
         ]
         
         print("\n" + "=" * 80)
-        print("🤖 CONSULTAS GERADAS POR IA (text-to-Cypher)")
+        print("CONSULTAS GERADAS POR IA (text-to-Cypher)")
         print("=" * 80)
         
         for pergunta in perguntas:
             print(f"\n[❓] {pergunta}")
             try:
                 cypher = gerar_cypher_com_llm(pergunta)
-                print(f"[📝] Cypher gerado: {cypher[:100]}...")
+                print(f"Cypher gerado: {cypher}")
                 resultados = executar(driver, cypher)
                 for linha in resultados:
                     print(f"  → {linha}")
             except Exception as erro:
-                print(f"  ⚠️  Consulta falhou: {erro}")
+                print(f"Consulta falhou: {erro}")
 
     driver.close()
-    print("\n✅ Exploração da lore concluída!")
+    print("\nExploração da lore concluída!")
 
 if __name__ == "__main__":
     main()
-

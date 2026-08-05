@@ -21,9 +21,10 @@ Responda APENAS com um JSON valido no seguinte formato:
 Regras:
 - Ignore acentos e cedilha.
 - Extraia apenas informacoes que estejam explicitamente presentes no texto.
-- Nao invente tipos novos de entidades nem de relacoes:
-  - I.E, se nao existir a relacao que você quer expressar, nao a invente.
-  - Alem disso, nao tente encaixar relacoes em tipos de relacao que nao se aplicam.
+- Nao invente tipos de entidade nem tipos de relacao.
+  - Utilize apenas os tipos canonicos listados neste prompt.
+  - Se um fato nao puder ser representado corretamente utilizando um dos tipos de relacao canonicos, nao extraia essa tripla.
+  - Nao tente representar um fato utilizando uma relacao incorreta apenas para encaixa-lo na lista.
 - Sempre utilize exatamente um dos seguintes tipos canonicos de entidade:
   - item
   - local
@@ -64,7 +65,8 @@ Regras:
   - Salubra vende Encanto de Foco (nao usa "dropa")
   - Derrota de Gruz Mae libera passagem -> usa "libera", nao "derrota"
   - Xero protege Tumulo dos Guerreiros (nao usa "localizado_em")
-- A EXCECAO a esta regra e a relacao "localizado_em". Se uma acao especifica implicar na presenca fisica da entidade no local, voce DEVE extrair a relacao especifica E TAMBEM a relacao "localizado_em" em uma tripla diferente.
+- A única exceção à regra de exclusividade acima é a relação "localizado_em". 
+  - Se o tipo de relação mais específico escolhido (ex: "protege") implicar fisicamente na presença da entidade no local, você DEVE extrair a relação específica E TAMBÉM gerar uma segunda tripla usando "localizado_em".
 - O campo "evidencia" deve conter um trecho curto do texto que comprove a tripla.
 TEXTO ({fonte}):
 {text}

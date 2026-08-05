@@ -91,8 +91,50 @@ def chamar_modelo(prompt, temperature=0.1, max_tokens=2048, max_retries=3):
         except Exception:
             raise
 
+def chamar_modelo_sem_json(prompt, temperature=0.1, max_tokens=2048, max_retries=3):
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = ollama.chat(
+                model=MODEL,
+                format="",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                options={
+                    "temperature": temperature,
+                    "num_ctx": 8192,
+                    "num_predict": max_tokens,
+                }
+            )
+            return response["message"]["content"].strip()
+        except (httpx.RemoteProtocolError, httpx.ConnectError, httpx.ReadTimeout) as erro:
+            if attempt == max_retries:
+                raise
+            wait = 2 ** (attempt - 1)
+            print(f"[aviso] erro de conexão ao chamar o modelo ({erro}); tentando novamente em {wait}s... ({attempt}/{max_retries})")
+            time.sleep(wait)
+        except Exception:
+            raise
+
 
 def escrever_json(path, conteudo):
     os.makedirs(path.parent, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(conteudo, f, ensure_ascii=False, indent=2)
+
+def extrair_json_seguro(resposta, max_tentativas=3):
+    """Extrai JSON com recuperação de falhas"""
+    # Tenta remover markdown backticks
+    resposta = resposta.replace("```json", "").replace("```", "")
+    
+    # Tenta encontrar o JSON válido mais longo
+    import re
+    json_matches = re.findall(r'\{.*\}', resposta, re.DOTALL)
+    
+    for tentativa, match in enumerate(json_matches):
+        try:
+            return json.loads(match)
+        except json.JSONDecodeError as e:
+            if tentativa == len(json_matches) - 1:
+                raise e
+            continue

@@ -15,16 +15,30 @@ def carregar_triplas():
 def construir_grafo(triplas):
     g = nx.MultiDiGraph()
     for n, t in enumerate(triplas):
-        g.add_node(t["origem"], label=t["origem"], tipo=t.get("tipo_origem", "?") )
-        g.add_node(t["destino"], label=t["destino"], tipo=t.get("tipo_destino", "?") )
+        origem = str(t["origem"])
+        destino = str(t["destino"])
+        tipo_origem = str(t.get("tipo_origem") or "?")
+        tipo_destino = str(t.get("tipo_destino") or "?")
+        relacao = str(t.get("relacao") or "?")
+        fonte = str(t.get("fonte") or "?")
+        evidencia = str(t.get("evidencia") or "")
+
+    
+        if origem not in g or g.nodes[origem].get("tipo") == "?":
+            g.add_node(origem, label=origem, tipo=tipo_origem)
+            
+        if destino not in g or g.nodes[destino].get("tipo") == "?":
+            g.add_node(destino, label=destino, tipo=tipo_destino)
+
+
         g.add_edge(
-            t["origem"],
-            t["destino"],
+            origem,
+            destino,
             key=f"e{n}",
-            label=t["relacao"],
-            relacao=t["relacao"],
-            fonte=t.get("fonte", "?"),
-            evidencia=t.get("evidencia", ""),
+            label=relacao,
+            relacao=relacao,
+            fonte=fonte,
+            evidencia=evidencia,
         )
     return g
 

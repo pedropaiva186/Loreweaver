@@ -20,7 +20,7 @@ def arestas_com_relacao(g, relacao):
 
 def consulta_multihop_herois(g, personagem):
     print(f"\n[Consulta 1 — multi-hop] Relações envolvendo {personagem}:")
-    fundadores = [u for u, v, _ in arestas_com_relacao(g, "derrotou") if v == personagem]
+    fundadores = [u for u, v, _ in arestas_com_relacao(g, "derrota") if v == personagem]
     for fundador in fundadores:
         print(f"  {fundador} derrotou {personagem}")
 
@@ -52,9 +52,9 @@ def main():
     g = mod04.construir_grafo(mod04.carregar_triplas())
     print(f"Grafo: {g.number_of_nodes()} nós, {g.number_of_edges()} arestas")
 
-    consulta_multihop_herois(g, "The Knight")
-    consulta_conector_de_locais(g, "Hallownest", "Cidade da Névoa")
-    consulta_caminho(g, "Hornet", "Hollow Knight")
+    consulta_multihop_herois(g, "Cavaleiro")
+    consulta_conector_de_locais(g, "hallownest", "Canion da nevoa")
+    consulta_caminho(g, "Hornet", "Cavaleiro")
 
 
 if __name__ == '__main__':

@@ -18,7 +18,7 @@ mod04 = import_module("04_construcao_grafo")
 
 URI = "bolt://localhost:7687"
 
-# Listas de validação/normalização conforme o seu schema
+# Listas de validação/normalização conforme o schema
 ENTIDADES_VALIDAS = {
     "item", "local", "npc", "conceito", "inimigo", 
     "habilidade", "chefe", "vendedor", "grupo"
@@ -31,7 +31,6 @@ RELACOES_VALIDAS = {
 }
 
 def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
-    """Sanitiza strings para uso seguro como Rótulos ou Tipos de Aresta no Cypher."""
     if not texto:
         return padrao
     limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
@@ -70,7 +69,7 @@ SCHEMA DO BANCO:
   :ITEM, :LOCAL, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
 
 - PROPRIEDADES DOS NÓS:
-  {nome: "Nome da Entidade"}
+  O único atributo de busca é 'nome'. NUNCA filtre o nome dentro do parênteses do MATCH.
 
 - RELAÇÕES (Tipos de Aresta em MAIÚSCULAS):
   -[:CONTEM]->, -[:DERROTA]->, -[:USA]->, -[:LOCALIZADO_EM]->, -[:AFETA]->,
@@ -80,19 +79,51 @@ SCHEMA DO BANCO:
 
 EXEMPLOS DE CONSULTAS CORRETAS:
 1. "O que o vendedor vende?"
-   MATCH (v:VENDEDOR)-[:VENDE]->(i:ITEM) RETURN v.nome, i.nome
+   MATCH (v:VENDEDOR)-[r:VENDE]->(i:ITEM) 
+   RETURN v.nome AS vendedor, i.nome AS item
 
-2. "Quais locais estão contidos em outro?"
-   MATCH (l1:LOCAL)-[:LOCALIZADO_EM|CONTEM]->(l2:LOCAL) RETURN l1.nome, l2.nome
+2. "Qual habilidade afeta ou derrota o chefe?"
+   MATCH (h:HABILIDADE)-[r:AFETA|DERROTA]->(c:CHEFE)
+   RETURN h.nome AS habilidade, type(r) AS relacao, c.nome AS chefe
+
+3. "Quais inimigos estão em Hallownest?"
+   MATCH (i:INIMIGO)-[:LOCALIZADO_EM]->(l:LOCAL)
+   WHERE toLower(l.nome) CONTAINS "hallownest"
+   RETURN i.nome AS inimigo, l.nome AS local
 
 REGRAS CRÍTICAS:
-- Use Rótulos (:CHEFE, :ITEM) e Tipos de Aresta (-[:DERROTA]->) diretamente na sintaxe do Cypher.
-- NUNCA use :ENTIDADE ou :RELACAO genéricos.
-- NUNCA crie Rótulos ou Relações fora do schema acima.
-- Responda APENAS com o código Cypher puro, sem blocos de markdown e sem explicações.
+- Use Rótulos e Tipos de Aresta diretamente na sintaxe do Cypher.
+- NUNCA invente Rótulos (Labels). Use apenas os da lista acima.
+- PROIBIDO usar propriedades dentro do MATCH (ex: `(:NPC {{nome: "Cavaleiro"}})` está ERRADO).
+- Para filtrar nomes específicos, você deve OBRIGATORIAMENTE usar a cláusula `WHERE toLower(n.nome) CONTAINS "texto_em_minusculo"`.
+- SINTAXE DO OU (|): Para múltiplas relações, NUNCA use parênteses. O correto é `-[r:AFETA|DERROTA]->` (e não `-[r:(AFETA|DERROTA)]->`).
+- FUNÇÃO TYPE: Para retornar o tipo de uma relação, SEMPRE use a função `type(r)`. NUNCA use `r.type`.
+- Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN (exemplo: v.nome AS vendedor).
+- Responda APENAS com o código Cypher puro, sem blocos de markdown.
 
 PERGUNTA: {pergunta}
 """
+
+
+def responder_pergunta_com_graphrag(pergunta, resultados_grafo):
+    prompt_rag = f"""
+Você é um assistente especialista na lore de Hollow Knight.
+Responda à pergunta do usuário utilizando APENAS os fatos extraídos do banco de dados de grafos abaixo.
+
+PERGUNTA DO USUÁRIO:
+{pergunta}
+
+DADOS RECUPERADOS DO GRAFO:
+{json.dumps(resultados_grafo, ensure_ascii=False)}
+
+RESPOSTA (seja claro, conciso e natural):
+"""
+    response = ollama.chat(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt_rag}],
+        options={"temperature": 0.2}
+    )
+    return response["message"]["content"]
 
 
 def carregar_no_memgraph(driver, triplas):
@@ -179,9 +210,9 @@ def main():
 
     if "--llm" in sys.argv:
         perguntas = [
-            "Quais itens o vendedor vende?",
-            "Qual habilidade afeta ou derrota o chefe?",
-            "Quais inimigos estão em qual local?"
+            "Quais itens o vendedor sly vende?",
+            "Qual habilidade do cavaleiro afeta ou derrota o chefe?",
+            "Quais inimigos estão em hallownest?"
         ]
         
         print("\n" + "=" * 80)
@@ -189,13 +220,15 @@ def main():
         print("=" * 80)
         
         for pergunta in perguntas:
-            print(f"\n[❓] {pergunta}")
+            print(f"\n{pergunta}")
             try:
                 cypher = gerar_cypher_com_llm(pergunta)
                 print(f"Cypher gerado: {cypher}")
                 resultados = executar(driver, cypher)
-                for linha in resultados:
-                    print(f"  → {linha}")
+                #for linha in resultados:
+                #    print(f"  → {linha}")
+                resposta_final = responder_pergunta_com_graphrag(pergunta, resultados)
+                print(f"Resposta gerado pelo GraphRAG: {resposta_final}")
             except Exception as erro:
                 print(f"Consulta falhou: {erro}")
 

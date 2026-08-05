@@ -4,14 +4,17 @@ import pathlib
 import re
 import time
 
+import tiktoken
+import httpx
 import ollama
 
 DIR_CORPUS = pathlib.Path(__file__).resolve().parent.parent / "data" / "hollow_knight_wiki_knowledge_pt"
 DIR_DADOS = pathlib.Path(__file__).resolve().parent.parent / "data" / "hollowknight_pipeline"
 
-CHUNK_SIZE = 2200
-CHUNK_OVERLAP = 500
-MODEL = "mistral:7b-instruct-v0.3-q4_K_M"
+CHUNK_SIZE = 600
+CHUNK_OVERLAP = 80
+MODEL = "qwen2.5:7b-instruct-q4_K_M" #mistral:7b-instruct-v0.3-q4_K_M
+
 
 
 def carregar_corpus():
@@ -26,13 +29,28 @@ def carregar_corpus():
 
 
 def dividir_em_chunks(texto):
+    # Utiliza o tokenizador do tiktoken (muito rápido em C)
+    encoder = tiktoken.get_encoding("cl100k_base")
+    tokens = encoder.encode(texto)
+    total_tokens = len(tokens)
+
+    if total_tokens <= (CHUNK_SIZE * 1.2):
+        return [texto]
+    
     chunks = []
     inicio = 0
-    while inicio < len(texto):
-        fim = inicio + CHUNK_SIZE
-        chunks.append(texto[inicio:fim].strip())
-        inicio = fim - CHUNK_OVERLAP
-    return [c for c in chunks if c]
+
+    while inicio < len(tokens):
+        # Pega a janela de tokens
+        chunk_tokens = tokens[inicio : inicio + CHUNK_SIZE]
+        # Decodifica de volta para texto legível
+        chunk_texto = encoder.decode(chunk_tokens)
+        chunks.append(chunk_texto)
+        
+        # Avança considerando a sobreposição (overlap)
+        inicio += CHUNK_SIZE - CHUNK_OVERLAP
+        
+    return chunks
 
 
 def extrair_json_do_texto(texto):
@@ -48,20 +66,30 @@ def extrair_json_do_texto(texto):
         raise ValueError(f"Não foi possível parsear JSON da resposta: {texto[:200]}...")
 
 
-def chamar_modelo(prompt, temperature=0.1, max_tokens=2048):
-    response = ollama.chat(
-        model=MODEL,
-        format="json",
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
-        options={
-            "temperature": temperature,
-            "num_ctx": 8192,
-            "num_predict": max_tokens,
-        }
-    )
-    return response["message"]["content"].strip()
+def chamar_modelo(prompt, temperature=0.1, max_tokens=2048, max_retries=3):
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = ollama.chat(
+                model=MODEL,
+                format="json",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                options={
+                    "temperature": temperature,
+                    "num_ctx": 8192,
+                    "num_predict": max_tokens,
+                }
+            )
+            return response["message"]["content"].strip()
+        except (httpx.RemoteProtocolError, httpx.ConnectError, httpx.ReadTimeout) as erro:
+            if attempt == max_retries:
+                raise
+            wait = 2 ** (attempt - 1)
+            print(f"[aviso] erro de conexão ao chamar o modelo ({erro}); tentando novamente em {wait}s... ({attempt}/{max_retries})")
+            time.sleep(wait)
+        except Exception:
+            raise
 
 
 def escrever_json(path, conteudo):

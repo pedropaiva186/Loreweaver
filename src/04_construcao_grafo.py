@@ -2,7 +2,7 @@
 
 import json
 import networkx as nx
-from .util_comum import DIR_DADOS
+from util_comum import DIR_DADOS
 
 
 def carregar_triplas():

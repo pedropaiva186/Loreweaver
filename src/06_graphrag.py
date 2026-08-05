@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 import networkx as nx
-from .util_comum import chamar_modelo, DIR_DADOS
+from util_comum import chamar_modelo, DIR_DADOS
 
 BASE_DIR = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location(

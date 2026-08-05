@@ -230,7 +230,7 @@ def main():
     else:
         print("  [checkpoint] Todas as entidades já foram processadas.")
 
-    # 2. Aplicação da resolução de entidades
+    # 2. Aplicação do nome canônico para origem e destino das triplas
     for t in triplas:
         t["origem"] = mapa_aliases.get(t["origem"], t["origem"])
         t["destino"] = mapa_aliases.get(t["destino"], t["destino"])

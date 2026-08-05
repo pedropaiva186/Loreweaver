@@ -14,8 +14,6 @@ from neo4j import GraphDatabase
 
 from util_comum import DIR_DADOS, MODEL
 
-mod04 = import_module("04_construcao_grafo")
-
 URI = "bolt://localhost:7687"
 
 # Listas de validação/normalização conforme o schema
@@ -178,8 +176,15 @@ def gerar_cypher_com_llm(pergunta):
     return cypher
 
 
+def carregar_triplas():
+    caminho = DIR_DADOS / "triplas_refinadas.json"
+    if not caminho.exists():
+        raise SystemExit(f"Arquivo não encontrado: {caminho}")
+    return json.loads(caminho.read_text(encoding='utf-8'))["triplas"]
+
+
 def main():
-    triplas = mod04.carregar_triplas()
+    triplas = carregar_triplas()
     try:
         driver = GraphDatabase.driver(URI, auth=("", ""))
         driver.verify_connectivity()

@@ -1,14 +1,28 @@
 # Trabalho III - Grafo de Conhecimento com Inteligência Artificial
 
+---
+
+## Equipe
+
+| #   | Nome completo             | Matrícula       |
+| --- | ------------------------- | --------------- |
+| 1   | João Victor Oliveira      | (20240008468)   |
+| 2   | Kevin Gabriel Mangueira   | (20240008000)   |
+| 3   | Luiz Henrique Santos      | (20240008261)   |
+| 4   | Pedro Henrique Paiva      | (20240008145)   | 
+| 5   | Victor Gabriel Menezes    | (20240008323)   |
+
+---
+
 Este projeto implementa a geração, estruturação e otimização de um Grafo de Conhecimento (utilizando `networkx`) em conjunto com um modelo de Inteligência Artificial rodando localmente. O pipeline é dividido em duas etapas principais: a extração de entidades brutas a partir de textos e a deduplicação inteligente utilizando processamento algorítmico e IA.
 
-## 🛠️ Pré-requisitos
+## Pré-requisitos
 
 Para rodar este projeto, você precisará de um ambiente Linux (ou WSL no Windows) com **Python 3.12** instalado.
 
 Todo o gerenciamento de dependências é feito através do **Poetry**, garantindo um ambiente determinístico e isolado. O processamento da IA é feito de forma local e offline utilizando o motor **Ollama**.
 
-## 🚀 Guia de Instalação Passo a Passo
+## Guia de Instalação Passo a Passo
 
 ### 1. Instalando o Gerenciador de Pacotes Python (pipx)
 
@@ -55,7 +69,7 @@ ollama pull mistral:7b-instruct-v0.3-q4_K_M
 
 ---
 
-## 💻 Como Executar o Pipeline
+## Como Executar o Pipeline
 
 O processo de construção do Grafo de Conhecimento é dividido em duas etapas sequenciais.
 

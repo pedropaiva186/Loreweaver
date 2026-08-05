@@ -22,15 +22,88 @@ def remover_acentos(texto):
 
 
 SINONIMOS_RELACAO = {
+    # sinonimos para derrota
     "vence": "derrota",
+    "venceu": "derrota",
+    "derrotou": "derrota",
+    "mata": "derrota",
+    "matou": "derrota",
+    "elimina": "derrota",
+    "eliminou": "derrota",
+    "destruiu": "derrota",
+    "destrói": "derrota",
+
+    # sinonimos para uso
     "utiliza": "usa",
     "usufrui": "usa",
+    "emprega": "usa",
+    "maneja": "usa",
+    "porta": "usa",
+    "equipa": "usa",
+
+    # sinônimos para localização
     "esta_em": "localizado_em",
+    "fica_em": "localizado_em",
+    "vive_em": "localizado_em",
+    "habita": "localizado_em",
+    "reside_em": "localizado_em",
+    "encontra_se_em": "localizado_em",
+    "situado_em": "localizado_em",
+
+    # sinônimos para pertencimento
+    "pertence_a": "membro_de",
+    "faz_parte_de": "membro_de",
+    "integra": "membro_de",
+
+    # sinonimos para criação criação
+    "criou": "cria",
+    "construiu": "cria",
+    "forjou": "cria",
+
+    # sinonimos para origem
+    "nasceu_em": "origina_se_em",
+    "originou_se_em": "origina_se_em",
+
+    # sinonimos para controle
+    "governa": "lidera",
+    "lider": "lidera",
+    "comanda": "lidera",
+
+    # sinonimos para proteção
+    "protege": "defende",
+    "guarda": "defende",
+
+    # sinonimos de infecção
+    "infecta": "infectou",
+    "corrompe": "infectou",
+    "corrompeu": "infectou",
+
+    # sinonimos de relações familiares
+    "filho_de": "eh_filho_de",
+    "pai_de": "e_pai_de",
+    "mae_de": "e_mae_de",
+
+    # sinônimos para relações genéricas
+    "e_um": "eh_um",
+    "é_um": "eh_um",
 }
 
 INVERSAS = {
+     # Família
     "e_pai_de": "eh_filho_de",
     "e_mae_de": "eh_filho_de",
+    "contem": "localizado_em",
+    "possui_local": "localizado_em",
+    "tem_membro": "membro_de",
+    "liderado_por": "lidera",
+    "criado_por": "cria",
+    "forjado_por": "forja",
+    "derrotado_por": "derrota",
+    "protegido_por": "defende",
+    "infectado_por": "infectou",
+    "origem_de": "origina_se_em",
+    "pertence_a": "possui",
+    "aparece_em": "possui_personagem"
 }
 
 PROMPT_RESOLUCAO = '''A lista abaixo contém nomes de entidades do universo Hollow Knight.

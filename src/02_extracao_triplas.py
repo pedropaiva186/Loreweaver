@@ -63,8 +63,7 @@ Regras:
   Exemplos:
   - Gruz Mae localizado_em Ruinas Esquecidas (nao usa "contem")
   - Salubra vende Encanto de Foco (nao usa "dropa")
-  - Derrota de Gruz Mae libera passagem -> usa "libera", nao "derrota"
-  - Xero protege Tumulo dos Guerreiros (nao usa "localizado_em")
+  - Derrota de Gruz Mae libera passagem -> use "libera", nao "derrota"
 - A única exceção à regra de exclusividade acima é a relação "localizado_em". 
   - Se o tipo de relação mais específico escolhido (ex: "protege") implicar fisicamente na presença da entidade no local, você DEVE extrair a relação específica E TAMBÉM gerar uma segunda tripla usando "localizado_em".
 - O campo "evidencia" deve conter um trecho curto do texto que comprove a tripla.

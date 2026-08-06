@@ -155,12 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } else {
+            // We remove the wrapping <p> tag from the template because marked.parse() 
+            // automatically generates <p>, <h1>, <ul>, etc., based on the content.
             msgDiv.innerHTML = `
                 <div class="avatar-glow avatar-wrapper">
                     ${oracleAvatarSVG}
                 </div>
-                <div class="assistant-bubble">
-                    <p>${escapeHTML(content)}</p>
+                <div class="assistant-bubble markdown-rendered">
+                    ${marked.parse(content)}
                 </div>
             `;
         }

@@ -1,108 +1,164 @@
-# Trabalho III - Grafo de Conhecimento com Inteligência Artificial
-
----
+# LoreWeaver - Pipeline de conhecimento para Hollow Knight
 
 ## Equipe
 
-| #   | Nome completo             | Matrícula       |
-| --- | ------------------------- | --------------- |
-| 1   | João Victor Oliveira      | (20240008468)   |
-| 2   | Kevin Gabriel Mangueira   | (20240008000)   |
-| 3   | Luiz Henrique Santos      | (20240008261)   |
-| 4   | Pedro Henrique Paiva      | (20240008145)   | 
-| 5   | Victor Gabriel Menezes    | (20240008323)   |
+| # | Nome completo | Matrícula |
+| --- | --- | --- |
+| 1 | João Victor Oliveira | (20240008468) |
+| 2 | Kevin Gabriel Mangueira | (20240008000) |
+| 3 | Luiz Henrique Santos | (20240008261) |
+| 4 | Pedro Henrique Paiva | (20240008145) |
+| 5 | Victor Gabriel Menezes | (20240008323) |
 
 ---
 
-Este projeto implementa a geração, estruturação e otimização de um Grafo de Conhecimento (utilizando `networkx`) em conjunto com um modelo de Inteligência Artificial rodando localmente. O pipeline é dividido em duas etapas principais: a extração de entidades brutas a partir de textos e a deduplicação inteligente utilizando processamento algorítmico e IA.
+Este projeto reúne um pipeline completo para construir uma base de conhecimento sobre Hollow Knight, extrair triplas semânticas, carregar esses dados em um banco de grafos e disponibilizar uma interface de conversa em uma página HTML.
+
+O fluxo atual é composto pelos scripts 01 a 05:
+
+1. Extração de páginas da wiki para arquivos Markdown.
+2. Geração de triplas a partir do corpus.
+3. Refinamento e normalização das triplas.
+4. Carregamento das triplas no Memgraph.
+5. Integração com a interface web.
+
+---
 
 ## Pré-requisitos
 
-Para rodar este projeto, você precisará de um ambiente Linux (ou WSL no Windows) com **Python 3.12** instalado.
+- Python 3.12
+- Docker
+- Chave de API do Gemini
+- Acesso à internet para consultar a wiki e chamar a API do Gemini
 
-Todo o gerenciamento de dependências é feito através do **Poetry**, garantindo um ambiente determinístico e isolado. O processamento da IA é feito de forma local e offline utilizando o motor **Ollama**.
+## Configuração do ambiente
 
-## Guia de Instalação Passo a Passo
+### 1. Criar e ativar um ambiente virtual com venv
 
-### 1. Instalando o Gerenciador de Pacotes Python (pipx)
+No Windows (PowerShell):
 
-O `pipx` é utilizado para instalar o Poetry de forma global e segura, sem quebrar os pacotes do sistema operacional. No terminal, execute:
-
-```bash
-sudo apt update
-sudo apt install pipx
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-### 2. Instalando o Poetry
-Com o `pipx` pronto, instale o gerenciador de dependências Poetry:
+No Linux/macOS:
 
 ```bash
-pipx install poetry
-pipx ensurepath
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-**Atenção:** Após rodar este comando, pode ser necessário reiniciar o terminal ou rodar `source ~/.bashrc` para que o comando `poetry` seja reconhecido.
+### 2. Instalar as dependências
 
-### 3. Instalando as Dependências do Projeto
-
-Na raiz do projeto (onde está o arquivo `pyproject.toml`), crie o ambiente virtual e instale as bibliotecas (`networkx`, `pydantic`, `ollama`, `json-repair`, etc.) rodando:
+Na raiz do projeto, execute:
 
 ```bash
-poetry install
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-### 4. Configurando a Inteligência Artificial Local (Ollama)
+### 3. Configurar a chave do Gemini
 
-O projeto utiliza a LLM Mistral. O modelo escolhido possui quantização de 4 bits (`mistral:7b-instruct-v0.3-q4_K_M`). Essa otimização permite que ele rode de forma extremamente rápida, exigindo a partir de 6GB de VRAM, mas escalando perfeitamente para utilizar o poder de fogo e a memória de placas de vídeo dedicadas mais potentes.
+Crie um arquivo chamado `.env` na raiz do projeto com o seguinte conteúdo:
 
-Primeiro, instale o motor do Ollama e suas dependências:
-
-```bash
-sudo apt-get install zstd
-curl -fsSL https://ollama.com/install.sh | sh
-```
-Depois, baixe os pesos do modelo específico utilizado no código:
-
-```bash
-ollama pull mistral:7b-instruct-v0.3-q4_K_M
+```env
+GEMINI_API_KEY=sua_chave_aqui
 ```
 
 ---
 
-## Como Executar o Pipeline
+## Fluxo de execução atual
 
-O processo de construção do Grafo de Conhecimento é dividido em duas etapas sequenciais.
+### 0. Subir o Memgraph
 
-Antes de iniciar, ative o ambiente virtual para ter o Python e o pacote de dependências disponíveis nativamente na sua sessão atual do terminal:
-
-```bash
-source $(poetry env info --path)/bin/activate
-```
-
-*(Para sair do ambiente virtual após o uso, basta digitar `deactivate`).*
-
-### Etapa 1: Extração Bruta e Construção do Grafo
-
-A primeira etapa realiza a leitura dos arquivos de texto e aciona a LLM para extrair as ontologias (entidades e relações), construindo o grafo inicial.
+Antes de rodar o script 04, inicie o container do Memgraph:
 
 ```bash
-python src/create_graph_knowledge.py
-
+docker run -it -p 7687:7687 -p 7444:7444 memgraph/memgraph-mage
 ```
 
-Isso irá gerar o arquivo base de dados em `data/knowledge_graph_hk.json`.
+### 1. Script 01 - Obter a wiki
 
-### Etapa 2: Limpeza e Deduplicação em Massa
-
-Grafos gerados por IA costumam conter entidades duplicadas (ex: variações de letras maiúsculas/minúsculas, aliases). Para resolver isso sem sobrecarregar o hardware, a segunda etapa aplica um pré-filtro algorítmico rápido seguido de uma análise refinada por IA em lotes.
+Esse script acessa a wiki de Hollow Knight e salva os artigos limpos em Markdown.
 
 ```bash
-python src/remove_knowledge_graph_duplicates.py
+python src/01_obter_wiki.py
 ```
 
-**Recurso de Checkpoint:**
-A análise em lote pela IA é intensiva. O script de deduplicação possui um sistema de salvamento automático (`data/dedup_checkpoint.json`). Caso você precise interromper o processo (pressionando `Ctrl+C`) ou ocorra alguma queda de energia, basta executar o script novamente. Ele pulará os lotes já processados e continuará exatamente de onde parou.
+### 2. Script 02 - Extração de triplas
 
-Ao final desta etapa, o grafo consolidado e limpo será salvo como `data/knowledge_graph_hk_clean.json`.
+Esse script lê o corpus gerado no passo anterior e usa o Gemini para extrair triplas de conhecimento.
 
-docker run -it -p 7687:7687 -p 7474:7474 memgraph/memgraph-mage  
+```bash
+python src/02_extracao_triplas.py
+```
+
+Os resultados são salvos em:
+
+- `data/hollowknight_pipeline/triplas_brutas.json`
+
+### 3. Script 03 - Refinamento das triplas
+
+Esse script normaliza entidades, relações e remove ruídos, produzindo um conjunto mais limpo para o banco de grafos.
+
+```bash
+python src/03_refinamento_triplas.py
+```
+
+O arquivo gerado é:
+
+- `data/hollowknight_pipeline/triplas_refinadas.json`
+
+### 4. Script 04 - Memgraph e Cypher
+
+Esse script carrega as triplas refinadas no Memgraph e executa consultas de exemplo em Cypher.
+
+```bash
+python src/04_memgraph_cypher.py
+```
+
+### 5. Script 05 - Integração com o frontend
+
+Esse script sobe a API Flask que recebe perguntas do usuário, gera uma consulta Cypher e retorna uma resposta com base no grafo.
+
+```bash
+python src/05_integracao_front.py
+```
+
+A API fica disponível em:
+
+- `http://127.0.0.1:5000/api/chat`
+
+### 6. Abrir a interface HTML
+
+A interface web está em `index.html`.
+
+Para evitar problemas de CORS, é recomendado subir a pasta do projeto com um servidor simples:
+
+```bash
+python -m http.server 8000
+```
+
+Depois abra no navegador:
+
+- `http://127.0.0.1:8000/`
+
+---
+
+## Arquivos principais
+
+- `src/01_obter_wiki.py` - extração dos artigos da wiki
+- `src/02_extracao_triplas.py` - extração de triplas com Gemini
+- `src/03_refinamento_triplas.py` - normalização das triplas
+- `src/04_memgraph_cypher.py` - carga no Memgraph e consultas Cypher
+- `src/05_integracao_front.py` - API backend para o frontend
+- `index.html` - interface web do projeto
+
+---
+
+## Observações
+
+- O processo depende de uma chave válida do Gemini configurada no `.env`.
+- O Memgraph precisa estar rodando antes do passo 04.
+- Se algum passo falhar, a execução pode ser repetida a partir do script seguinte, desde que os arquivos intermediários já tenham sido gerados.

@@ -24,10 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const SUGGESTIONS = [
-        'Me diga todos os itens que podem são vendido?',
+        'Me diga todos os itens que podem ser vendidos?',
         'Me diga todos os bosses e suas localizações.',
         'Quais são todas as areas do jogo?',
-        'Me conte mais sobre Hornet.',
+        'Me conte mais sobre a Hornet.',
         'Quais são os lugares que o Quirrel aparece?',
         'Me conte mais sobre o cavaleiro.',
     ];

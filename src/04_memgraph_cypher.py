@@ -22,18 +22,15 @@ ENTIDADES_VALIDAS = {
     "habilidade", "chefe", "vendedor", "grupo"
 }
 
+# Lista de relações válidas conforme o schema
 RELACOES_VALIDAS = {
     "contem", "derrota", "usa", "localizado_em", "afeta", "requer",
     "executa_habilidade", "leva_a", "vende", "dropa", "libera",
     "cria", "eh_inimigo_de", "eh_relatado_por", "eh_membro_de", "protege"
 }
 
-def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
-    if not texto:
-        return padrao
-    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
-    return limpo.upper() if limpo else padrao
 
+# Dicionário com consultas básicas de exemplo para demonstração
 CONSULTAS_CYPHER = {
     "Chefes derrotados no jogo": """
         MATCH (p)-[r:DERROTA]->(c:CHEFE)
@@ -60,6 +57,7 @@ CONSULTAS_CYPHER = {
     """,
 }
 
+# Prompt para gerar consultas Cypher a partir de perguntas em linguagem natural
 PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que gera consultas para Memgraph/Neo4j.
 
 SCHEMA DO BANCO:
@@ -103,6 +101,15 @@ PERGUNTA: {pergunta}
 """
 
 
+# Função para seguir a convenção de identificadores de rótulos e relações
+def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
+    if not texto:
+        return padrao
+    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
+    return limpo.upper() if limpo else padrao
+
+
+# Chamar o modelo para responder alguma pergunta a partir do grafo como contexto (GraphRAG)
 def responder_pergunta_com_graphrag(pergunta, resultados_grafo):
     prompt_rag = f"""
 Você é um assistente especialista na lore de Hollow Knight.
@@ -123,7 +130,7 @@ RESPOSTA (seja claro, conciso e natural):
     )
     return response["message"]["content"]
 
-
+# Carregar as triplas no Memgraph usando Rótulos e Relações Nativas
 def carregar_no_memgraph(driver, triplas):
     with driver.session() as sessao:
         sessao.run("MATCH (n) DETACH DELETE n")
@@ -158,24 +165,13 @@ def carregar_no_memgraph(driver, triplas):
         rels = sessao.run("MATCH ()-[r]->() RETURN count(r) AS n").single()["n"]
     print(f"Memgraph carregado: {total} nós, {rels} relações com Rótulos Nativos!")
 
-
+# Executar uma consulta Cypher e retornar resultados como uma lista de dicionários
 def executar(driver, cypher):
     with driver.session() as sessao:
         return [dict(reg) for reg in sessao.run(cypher)]
 
 
-def gerar_cypher_com_llm(pergunta):
-    response = ollama.chat(
-        model=MODEL,
-        format="",
-        messages=[{"role": "user", "content": PROMPT_TEXT2CYPHER.format(pergunta=pergunta)}],
-        options={"temperature": 0.0, "num_ctx": 32768, "num_predict": 1024},
-    )
-    cypher = response["message"]["content"].strip()
-    cypher = re.sub(r"^```(?:cypher)?\n|```$", "", cypher, flags=re.IGNORECASE).strip()
-    return cypher
-
-
+# Carregar triplas refinadas do arquivo JSON refinado no script 03_refinamento
 def carregar_triplas():
     caminho = DIR_DADOS / "triplas_refinadas.json"
     if not caminho.exists():

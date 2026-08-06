@@ -76,6 +76,7 @@ def main():
     todas = []
 
     for nome, texto in docs:
+        # Divisão em chunks para evitar estouro de tokens e facilitar a extração
         for n, chunk in enumerate(dividir_em_chunks(texto)):
             prompt = PROMPT_EXTRACAO.format(fonte=nome, text=chunk)
             resposta = chamar_modelo(prompt)

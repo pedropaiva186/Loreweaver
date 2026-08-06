@@ -8,19 +8,6 @@ from util_comum import chamar_modelo, escrever_json, DIR_DADOS
 
 REQUIRED_TRIPLA_KEYS = {"origem", "tipo_origem", "destino", "tipo_destino", "relacao", "fonte"}
 
-
-def validar_tripla(tripla):
-    if not isinstance(tripla, dict):
-        return False
-    return REQUIRED_TRIPLA_KEYS.issubset(tripla.keys())
-
-
-def remover_acentos(texto):
-    texto = str(texto)
-    nfkd = unicodedata.normalize("NFKD", texto)
-    return "".join(c for c in nfkd if not unicodedata.combining(c))
-
-
 SINONIMOS_RELACAO = {
     "vence": "derrota",
     "utiliza": "usa",
@@ -43,7 +30,19 @@ Apenas inclua grupos quando houver mais de uma variação para a mesma entidade 
 NOMES:
 {nomes}'''
 
+# Função para validar se uma tripla possui todas as chaves obrigatórias
+def validar_tripla(tripla):
+    if not isinstance(tripla, dict):
+        return False
+    return REQUIRED_TRIPLA_KEYS.issubset(tripla.keys())
 
+# Função para remover acentos de uma string
+def remover_acentos(texto):
+    texto = str(texto)
+    nfkd = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+# Função para verificar se uma entidade é válida, evitando envio de frases muito grandes
 def eh_entidade_valida(nome: str) -> bool:
     #Utilizado para evitar o envio de frases muito grandes como entidades
     if not nome or str(nome).lower() in ("none", "null", "?"):
@@ -51,14 +50,14 @@ def eh_entidade_valida(nome: str) -> bool:
     s = str(nome).strip()
     return len(s) <= 50 and len(s.split()) <= 6
 
-
+# Função para normalizar nomes de entidades, removendo artigos e acentos
 def normalizar_nome(nome):
     n = " ".join(str(nome).split())
     n = re.sub(r"^o |^a |^os |^as ", "", n, flags=re.IGNORECASE)
     n = remover_acentos(n)
     return n.strip()
 
-
+# Função para normalizar as relações, incluindo a inversão de relações e substituição de sinônimos
 def normalizar_relacao(tripla):
     rel = remover_acentos(tripla["relacao"].lower()).replace(" ", "_")
     if rel in INVERSAS:
@@ -97,9 +96,8 @@ def main():
         
     triplas = validas
 
-    # -------------------------------------------------------------------------
-    # PONTO DE CHECAGEM: Resolução de Entidades por Batching via LLM
-    # -------------------------------------------------------------------------
+    # Checkpoint: Resolução de Entidades por Batching via LLM
+
     arquivo_checkpoint = DIR_DADOS / "resolucao_entidades_checkpoint.json"
     
     mapa_aliases = {}
@@ -111,12 +109,14 @@ def main():
     
     nomes_processados = set(mapa_aliases.keys())
     nomes_para_processar = [n for n in todos_nomes if n not in nomes_processados]
-    
+
+    ## Batch de tamanho 30 para evitar a sobrecarga do modelo, fizemos isso, pois estávamos usando um modelo local antes de utilizar o gemini
     batch_size = 30
-    
+
+    # Ainda existem nomes a serem processados, então chamamos o modelo em lotes
     if nomes_para_processar:
         print(f"  [LLM] Processando {len(nomes_para_processar)} entidades em lotes de {batch_size}...")
-        
+
         for i in range(0, len(nomes_para_processar), batch_size):
             batch = nomes_para_processar[i : i + batch_size]
             prompt = PROMPT_RESOLUCAO.format(nomes="\n".join(f"- {n}" for n in batch))

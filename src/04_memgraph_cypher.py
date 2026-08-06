@@ -111,10 +111,10 @@ EXEMPLOS DE CONSULTAS CORRETAS:
 - "Quais itens são encontrados na Bacia Antiga?":
   MATCH (i:ITEM)-[r:LOCALIZADO_EM]->(l:LOCALIZACAO)
   WHERE toLower(l.nome) CONTAINS "bacia antiga"
-  RETURN i.nome AS item, type(r) AS relacao, l.nome AS localizacao, r.evidencia AS contexto LIMIT 20
+  RETURN i.nome AS item, type(r) AS relacao, l.nome AS localizacao, r.evidencia AS contexto LIMIT 50
 
 - "Qual o caminho entre Dirtmouth e a Cidade das Lágrimas?":
-  MATCH p = (origem:LOCALIZACAO)-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-(destino:LOCALIZACAO)
+  MATCH p = (origem:LOCALIZACAO)-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..30]-(destino:LOCALIZACAO)
   WHERE toLower(origem.nome) CONTAINS "dirtmouth" AND toLower(destino.nome) CONTAINS "cidade das lagrimas"
   WITH p LIMIT 1
   UNWIND relationships(p) AS r

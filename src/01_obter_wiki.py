@@ -91,7 +91,7 @@ def export_wiki_articles():
         
         # Ignorar Redirecionamentos (Redirecionam para a página principal do assunto)
         if page.redirect:
-            print(f"⏩ Pulando redirecionamento: {title}")
+            print(f"Pulando redirecionamento: {title}")
             continue
 
         wikitext = page.text()
@@ -100,7 +100,7 @@ def export_wiki_articles():
         if not wikitext or not wikitext.strip():
             continue
 
-        print(f"📄 Processando: {title}")
+        print(f"Processando: {title}")
 
         # Executar o pipeline de limpeza
         markdown_content = clean_wikitext_to_markdown(wikitext)
@@ -118,7 +118,7 @@ def export_wiki_articles():
             f.write(f"# {title}\n\n")
             f.write(markdown_content)
 
-    print(f"\n✅ Concluído! Todos os artigos limpos foram salvos em: {OUTPUT_DIR}")
+    print(f"\nConcluído! Todos os artigos limpos foram salvos em: {OUTPUT_DIR}")
 
 if __name__ == '__main__':
     export_wiki_articles()

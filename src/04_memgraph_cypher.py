@@ -92,6 +92,11 @@ REGRAS CRÍTICAS:
     Se o usuário fizer uma pergunta que NÃO tenha relação com o universo do jogo, ou pedir códigos em outras linguagens (como Python, JavaScript, etc.), você NÃO DEVE gerar o que ele pediu e NÃO DEVE responder com texto natural.
     Nesses casos, você deve OBRIGATORIAMENTE retornar apenas a seguinte consulta de segurança em Cypher:
     RETURN "Fora de escopo" AS erro
+7. ROTAS E CAMINHOS GEOGRÁFICOS (PATHFINDING):
+- Memgraph NÃO suporta a função `shortestPath()` do Neo4j. NUNCA use `shortestPath()`.
+- Para rotas geográficas, RESTRINJA a busca APENAS às relações espaciais para evitar caminhos ilógicos (ex: através de itens ou vendedores). Use `-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-`.
+- Use `WITH p LIMIT 1` para pegar apenas o caminho mais curto encontrado.
+- Use `UNWIND nodes(p) AS n` E `UNWIND relationships(p) AS r` para retornar os passos e a lore.
 
 EXEMPLOS DE CONSULTAS CORRETAS:
 - "Quem é Sly?" ou "Fale sobre Sly":
@@ -107,6 +112,14 @@ EXEMPLOS DE CONSULTAS CORRETAS:
   MATCH (i:ITEM)-[r:LOCALIZADO_EM]->(l:LOCALIZACAO)
   WHERE toLower(l.nome) CONTAINS "bacia antiga"
   RETURN i.nome AS item, type(r) AS relacao, l.nome AS localizacao, r.evidencia AS contexto LIMIT 20
+
+- "Qual o caminho entre Dirtmouth e a Cidade das Lágrimas?":
+  MATCH p = (origem:LOCALIZACAO)-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-(destino:LOCALIZACAO)
+  WHERE toLower(origem.nome) CONTAINS "dirtmouth" AND toLower(destino.nome) CONTAINS "cidade das lagrimas"
+  WITH p LIMIT 1
+  UNWIND relationships(p) AS r
+  UNWIND nodes(p) AS n
+  RETURN DISTINCT n.nome AS passo, type(r) AS relacao, r.evidencia AS contexto LIMIT 50
 
 PERGUNTA: {pergunta}
 """

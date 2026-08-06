@@ -5,7 +5,7 @@ import mwparserfromhell
 
 # 1. Configuração do ambiente e conexão
 SITE_DOMAIN = 'hollowknight.fandom.com'
-PATH = '/pt/'  # Altere para '/' se desejar a wiki em inglês
+PATH = '/pt/'
 OUTPUT_DIR = 'hollow_knight_knowledge_base'
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

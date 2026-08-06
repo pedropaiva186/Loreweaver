@@ -14,7 +14,7 @@ CORS(app)
 try:
     driver = GraphDatabase.driver(m_cypher.URI, auth=("", ""))
     driver.verify_connectivity()
-    print("✅ Connected to Memgraph successfully.")
+    print("Conexão com o Memgraph estabelecida.")
 except Exception as e:
     print(f" Falha ao conectar com o memgraph: {e}")
     driver = None
@@ -28,7 +28,7 @@ def chat():
     data = request.get_json()
     
     if not data or 'message' not in data:
-        return jsonify({"error": "No message provided"}), 400
+        return jsonify({"error": "Nenhuma mensagem fornecida"}), 400
 
     user_message = data['message']
 

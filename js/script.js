@@ -24,12 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const SUGGESTIONS = [
-        'Who is the Pale King?',
-        'Explain the Void.',
-        'What happened to Hallownest?',
-        'Tell me about Hornet.',
-        'Who created the Infection?',
-        'Explain the Dream Realm.',
+        'Me diga todos os itens que podem são vendido?',
+        'Me diga todos os bosses e suas localizações.',
+        'Quais são todas as areas do jogo?',
+        'Me conte mais sobre Hornet.',
+        'Quais são os lugares que o Quirrel aparece?',
+        'Me conte mais sobre o cavaleiro.',
     ];
 
     // ─── SVG Avatar Template ──────────────────────────────────────────────────────

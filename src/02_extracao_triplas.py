@@ -21,20 +21,21 @@ Responda APENAS com um JSON valido no seguinte formato:
 Regras:
 - Ignore acentos e cedilha.
 - Extraia apenas informacoes que estejam explicitamente presentes no texto.
-- Nao invente tipos novos de entidades nem de relacoes:
-  - I.E, se nao existir a relacao que você quer expressar, nao a invente.
-  - Alem disso, nao tente encaixar relacoes em tipos de relacao que nao se aplicam.
+- Nao invente tipos de entidade nem tipos de relacao.
+  - Utilize apenas os tipos canonicos listados neste prompt.
+  - Se um fato nao puder ser representado corretamente utilizando um dos tipos de relacao canonicos, nao extraia essa tripla.
+  - Nao tente representar um fato utilizando uma relacao incorreta apenas para encaixa-lo na lista.
 - Sempre utilize exatamente um dos seguintes tipos canonicos de entidade:
+  - protagonista (Apenas o cavaleiro/knight é o protagonista)
   - item
-  - local
+  - localizacao
   - npc
-  - conceito
   - inimigo
   - habilidade
   - chefe
-  - vendedor
+  - vendedor (Vende algum item ou habilidade)
   - grupo
-  - protagonista
+  - conceito (Tudo que não se encaixa nos outros tipos.)
 - Caso uma entidade possa pertencer a mais de um tipo, escolha o mais especifico.
   Exemplos:
   - Mercador -> vendedor
@@ -43,18 +44,18 @@ Regras:
   - Vengefly -> inimigo
 - Sempre utilize exatamente um dos seguintes tipos canonicos de relacao:
   - contem
-  - derrota
-  - usa
+  - derrota (uma origem derrota um destino)
+  - usa (uma origem usa um destino do tipo item)
   - localizado_em
   - afeta
   - requer
-  - executa_habilidade
-  - leva_a
-  - vende
-  - dropa
-  - libera
-  - cria
-  - eh_inimigo_de
+  - executa_habilidade (uma origem executa um destino do tipo habilidade)
+  - leva_a (uma origem do tipo localizacao leva a um destino do tipo localizacao)
+  - vende (uma origem do tipo vendedor vende um destino do tipo item ou habilidade)
+  - dropa (uma origem do tipo inimigo ou chefe dropa um destino do tipo item ou habilidade)
+  - libera (uma origem do tipo inimigo ou chefe libera um destino do tipo localizacao)
+  - cria 
+  - eh_inimigo_de 
   - eh_relatado_por
   - eh_membro_de
   - protege
@@ -62,9 +63,9 @@ Regras:
   Exemplos:
   - Gruz Mae localizado_em Ruinas Esquecidas (nao usa "contem")
   - Salubra vende Encanto de Foco (nao usa "dropa")
-  - Derrota de Gruz Mae libera passagem -> usa "libera", nao "derrota"
-  - Xero protege Tumulo dos Guerreiros (nao usa "localizado_em")
-- A EXCECAO a esta regra e a relacao "localizado_em". Se uma acao especifica implicar na presenca fisica da entidade no local, voce DEVE extrair a relacao especifica E TAMBEM a relacao "localizado_em" em uma tripla diferente.
+  - Derrota de Gruz Mae libera passagem -> use "libera", nao "derrota"
+- A única exceção à regra de exclusividade acima é a relação "localizado_em". 
+  - Se o tipo de relação mais específico escolhido (ex: "protege") implicar fisicamente na presença da entidade no localizacao, você DEVE extrair a relação específica E TAMBÉM gerar uma segunda tripla usando "localizado_em".
 - O campo "evidencia" deve conter um trecho curto do texto que comprove a tripla.
 TEXTO ({fonte}):
 {text}

@@ -1,18 +1,30 @@
+import importlib
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from neo4j import GraphDatabase
+
+# Dynamically import the memgraph module because the filename starts with a number
+m_cypher = importlib.import_module("04_memgraph_cypher")
 
 app = Flask(__name__)
-# Enable CORS so the frontend can communicate with the backend regardless of origin/port
+# Enable CORS so the frontend can communicate with the backend
 CORS(app) 
 
-# ADDED: A simple route to verify the server is running when you visit the root URL
+# Initialize the Memgraph connection globally
+try:
+    driver = GraphDatabase.driver(m_cypher.URI, auth=("", ""))
+    driver.verify_connectivity()
+    print("✅ Connected to Memgraph successfully.")
+except Exception as e:
+    print(f"❌ Failed to connect to Memgraph: {e}")
+    driver = None
+
 @app.route('/', methods=['GET'])
 def home():
     return "LoreWeaver API is running! The frontend should connect to /api/chat."
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    # 1. Receive data from the frontend
     data = request.get_json()
     
     if not data or 'message' not in data:
@@ -20,11 +32,30 @@ def chat():
 
     user_message = data['message']
 
-    # 2. For now, we return a simple echo to verify the connection is working.
-    placeholder_response = f"Communication successful! The backend received your message: '{user_message}'"
+    # Verify if Memgraph is active before trying to query
+    if not driver:
+        return jsonify({"response": "Erro: Não foi possível conectar ao banco de dados Memgraph. Verifique se o container docker está rodando."})
 
-    # 3. Send the response back to the frontend
-    return jsonify({"response": placeholder_response})
+    try:
+        print(f"\n--- Nova pergunta: {user_message} ---")
+        
+        # 1. Generate Cypher query via LLM
+        cypher_query = m_cypher.gerar_cypher_com_llm(user_message)
+        print(f"Cypher Query Gerada:\n{cypher_query}")
+        
+        # 2. Execute query in Memgraph
+        resultados_grafo = m_cypher.executar(driver, cypher_query)
+        print(f"Resultados do Grafo:\n{resultados_grafo}")
+        
+        # 3. Generate final response via RAG
+        resposta_final = m_cypher.responder_pergunta_com_graphrag(user_message, resultados_grafo)
+        
+        # 4. Return the actual AI response to the frontend
+        return jsonify({"response": resposta_final})
+
+    except Exception as e:
+        print(f"Erro durante o processamento: {e}")
+        return jsonify({"response": f"Desculpe, ocorreu um erro ao processar sua pergunta: {str(e)}"})
 
 if __name__ == '__main__':
     print("Starting LoreWeaver API Server on http://127.0.0.1:5000")

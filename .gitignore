@@ -1,4 +1,11 @@
 /.venv
+
 data/hollowknight_pipeline/resolucao_entidades_checkpoint.json
+
 data/hollowknight_pipeline/grafo.graphml
+
 .env
+
+*.pyc
+
+/__pycache__

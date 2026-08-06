@@ -50,7 +50,7 @@ Regras:
   - afeta
   - requer
   - executa_habilidade (uma origem executa um destino do tipo habilidade)
-  - leva_a (uma origem do tipo local leva a um destino do tipo local)
+  - leva_a (uma origem do tipo localizacao leva a um destino do tipo localizacao)
   - vende (uma origem do tipo vendedor vende um destino do tipo item ou habilidade)
   - dropa (uma origem do tipo inimigo ou chefe dropa um destino do tipo item ou habilidade)
   - libera (uma origem do tipo inimigo ou chefe libera um destino do tipo localizacao)
@@ -65,7 +65,7 @@ Regras:
   - Salubra vende Encanto de Foco (nao usa "dropa")
   - Derrota de Gruz Mae libera passagem -> use "libera", nao "derrota"
 - A única exceção à regra de exclusividade acima é a relação "localizado_em". 
-  - Se o tipo de relação mais específico escolhido (ex: "protege") implicar fisicamente na presença da entidade no local, você DEVE extrair a relação específica E TAMBÉM gerar uma segunda tripla usando "localizado_em".
+  - Se o tipo de relação mais específico escolhido (ex: "protege") implicar fisicamente na presença da entidade no localizacao, você DEVE extrair a relação específica E TAMBÉM gerar uma segunda tripla usando "localizado_em".
 - O campo "evidencia" deve conter um trecho curto do texto que comprove a tripla.
 TEXTO ({fonte}):
 {text}

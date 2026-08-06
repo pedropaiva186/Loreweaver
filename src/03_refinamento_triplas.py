@@ -64,7 +64,7 @@ SINONIMOS_RELACAO = {
     "nasceu_em": "origina_se_em",
     "originou_se_em": "origina_se_em",
 
-    # sinonimos para controle
+    # sinonimos para lidera
     "governa": "lidera",
     "lider": "lidera",
     "comanda": "lidera",
@@ -72,37 +72,15 @@ SINONIMOS_RELACAO = {
     # sinonimos para proteção
     "protege": "defende",
     "guarda": "defende",
-
-    # sinonimos de infecção
-    "infecta": "infectou",
-    "corrompe": "infectou",
-    "corrompeu": "infectou",
-
-    # sinonimos de relações familiares
-    "filho_de": "eh_filho_de",
-    "pai_de": "e_pai_de",
-    "mae_de": "e_mae_de",
-
-    # sinônimos para relações genéricas
-    "e_um": "eh_um",
-    "é_um": "eh_um",
 }
 
 INVERSAS = {
-    "e_pai_de": "eh_filho_de",
-    "e_mae_de": "eh_filho_de",
-    "contem": "localizado_em",
     "possui_local": "localizado_em",
     "tem_membro": "membro_de",
     "liderado_por": "lidera",
     "criado_por": "cria",
-    "forjado_por": "forja",
     "derrotado_por": "derrota",
-    "protegido_por": "defende",
-    "infectado_por": "infectou",
-    "origem_de": "origina_se_em",
-    "pertence_a": "possui",
-    "aparece_em": "possui_personagem"
+    "protegido_por": "protege",
 }
 
 PROMPT_RESOLUCAO = '''A lista abaixo contém nomes de entidades do universo Hollow Knight.

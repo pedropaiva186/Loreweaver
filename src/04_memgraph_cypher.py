@@ -61,41 +61,52 @@ PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que gera consultas pa
 
 SCHEMA DO BANCO:
 - ENTIDADES (Labels dos Nós em MAIÚSCULAS):
-  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
-
-- PROPRIEDADES DOS NÓS:
-  O único atributo de busca é 'nome'. NUNCA filtre o nome dentro do parênteses do MATCH.
+  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO, :PROTAGONISTA
 
 - RELAÇÕES (Tipos de Aresta em MAIÚSCULAS):
-  -[:CONTEM]->, -[:DERROTA]->, -[:USA]->, -[:LOCALIZADO_EM]->, -[:AFETA]->,
-  -[:REQUER]->, -[:EXECUTA_HABILIDADE]->, -[:LEVA_A]->, -[:VENDE]->, -[:DROPA]->,
-  -[:LIBERA]->, -[:CRIA]->, -[:EH_INIMIGO_DE]->, -[:EH_RELATADO_POR]->,
-  -[:EH_MEMBRO_DE]->, -[:PROTEGE]->
+  -[:CONTEM]-, -[:DERROTA]-, -[:USA]-, -[:LOCALIZADO_EM]-, -[:AFETA]-,
+  -[:REQUER]-, -[:EXECUTA_HABILIDADE]-, -[:LEVA_A]-, -[:VENDE]-, -[:DROPA]-,
+  -[:LIBERA]-, -[:CRIA]-, -[:EH_INIMIGO_DE]-, -[:EH_RELATADO_POR]-,
+  -[:EH_MEMBRO_DE]-, -[:PROTEGE]-
 
-EXEMPLOS DE CONSULTAS CORRETAS:
-1. "O que o vendedor vende?"
-   MATCH (v:VENDEDOR)-[r:VENDE]->(i:ITEM) 
-   RETURN v.nome AS vendedor, i.nome AS item
-
-2. "Qual habilidade afeta ou derrota o chefe?"
-   MATCH (h:HABILIDADE)-[r:AFETA|DERROTA]->(c:CHEFE)
-   RETURN h.nome AS habilidade, type(r) AS relacao, c.nome AS chefe
-
-3. "Quais inimigos estão em Hallownest?"
-   MATCH (i:INIMIGO)-[:LOCALIZADO_EM]->(l:LOCALIZACAO)
-   WHERE toLower(l.nome) CONTAINS "hallownest"
-   RETURN i.nome AS inimigo, l.nome AS localizacao
+OBJETIVO PRINCIPAL:
+Você deve gerar consultas que maximizem o CONTEXTO NARRATIVO. 
+Sempre que consultar uma relação [r], você DEVE OBRIGATORIAMENTE retornar r.evidencia AS contexto. É lá que está a lore rica do jogo.
 
 REGRAS CRÍTICAS:
-- Use Rótulos e Tipos de Aresta diretamente na sintaxe do Cypher.
-- NUNCA invente Rótulos (Labels). Use apenas os da lista acima.
-- PROIBIDO usar propriedades dentro do MATCH (ex: `(:NPC {{nome: "Cavaleiro"}})` está ERRADO).
-- Para filtrar nomes específicos, você deve OBRIGATORIAMENTE usar a cláusula `WHERE toLower(n.nome) CONTAINS "texto_em_minusculo"`.
-- SINTAXE DO OU (|): Para múltiplas relações, NUNCA use parênteses. O correto é `-[r:AFETA|DERROTA]->` (e não `-[r:(AFETA|DERROTA)]->`).
-- FUNÇÃO TYPE: Para retornar o tipo de uma relação, SEMPRE use a função `type(r)`. NUNCA use `r.type`.
-- Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN (exemplo: v.nome AS vendedor).
-- Responda APENAS com o código Cypher puro, sem blocos de markdown.
-- Os atributos todos estao em minusculo
+1. Para perguntas do tipo "Quem é X?", "Fale sobre X" ou "História de X" (Ego Graph):
+   - Use relacionamentos NÃO-DIRECIONADOS -[r]- para pegar tudo que entra e sai do nó.
+   - Ex: MATCH (n)-[r]-(m) WHERE toLower(n.nome) CONTAINS "sly" RETURN n.nome AS entidade1, type(r) AS relacao, m.nome AS entidade2, r.evidencia AS contexto LIMIT 50
+2. Filtragem de Nomes (Desambiguação):
+   - NUNCA use propriedades dentro do parênteses (ex: (:NPC {{nome: "X"}}) está ERRADO).
+   - SEMPRE use WHERE toLower(n.nome) CONTAINS "texto". Isso garante que "sly" encontre tanto "sly" quanto "grande sabio do ferrao sly".
+3. Sintaxe de Múltiplas Relações:
+   - O correto é -[r:AFETA|DERROTA]- e NUNCA -[r:(AFETA|DERROTA)]-.
+4. Retorno Obrigatório:
+   - Sempre inclua r.evidencia AS contexto se houver uma variável de relação r na consulta.
+   - Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN (ex: type(r) AS relacao).
+5. Formato da Resposta:
+   - Responda APENAS com o código Cypher puro. 
+   - NÃO use blocos de código Markdown (remova as crases ``` e a palavra cypher).
+6. Proteção contra Fora de Escopo (Out-of-Domain):
+    Se o usuário fizer uma pergunta que NÃO tenha relação com o universo do jogo, ou pedir códigos em outras linguagens (como Python, JavaScript, etc.), você NÃO DEVE gerar o que ele pediu e NÃO DEVE responder com texto natural.
+    Nesses casos, você deve OBRIGATORIAMENTE retornar apenas a seguinte consulta de segurança em Cypher:
+    RETURN "Fora de escopo" AS erro
+
+EXEMPLOS DE CONSULTAS CORRETAS:
+- "Quem é Sly?" ou "Fale sobre Sly":
+  MATCH (n)-[r]-(m) 
+  WHERE toLower(n.nome) CONTAINS "sly" 
+  RETURN n.nome AS entidade_foco, type(r) AS relacao, m.nome AS entidade_relacionada, r.evidencia AS contexto LIMIT 50
+
+- "O que o vendedor vende?":
+  MATCH (v:VENDEDOR)-[r:VENDE]->(i:ITEM) 
+  RETURN v.nome AS vendedor, i.nome AS item, r.evidencia AS contexto LIMIT 15
+
+- "Quais itens são encontrados na Bacia Antiga?":
+  MATCH (i:ITEM)-[r:LOCALIZADO_EM]->(l:LOCALIZACAO)
+  WHERE toLower(l.nome) CONTAINS "bacia antiga"
+  RETURN i.nome AS item, type(r) AS relacao, l.nome AS localizacao, r.evidencia AS contexto LIMIT 20
 
 PERGUNTA: {pergunta}
 """
@@ -240,7 +251,7 @@ def main():
 
     if "--llm" in sys.argv:
         perguntas = [
-            "Qual rota para sair de dirtmouth e chegar na encuzilhada esquecida?",
+            "",
         ]
         
         print("\n" + "=" * 80)

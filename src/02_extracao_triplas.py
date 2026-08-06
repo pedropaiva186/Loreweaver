@@ -26,7 +26,6 @@ Regras:
   - Se um fato nao puder ser representado corretamente utilizando um dos tipos de relacao canonicos, nao extraia essa tripla.
   - Nao tente representar um fato utilizando uma relacao incorreta apenas para encaixa-lo na lista.
 - Sempre utilize exatamente um dos seguintes tipos canonicos de entidade:
-  - protagonista (Apenas o cavaleiro/knight é o protagonista)
   - item
   - localizacao
   - npc

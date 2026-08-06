@@ -19,7 +19,7 @@ URI = "bolt://localhost:7687"
 # Listas de validação/normalização conforme o schema
 ENTIDADES_VALIDAS = {
     "item", "localizacao", "npc", "conceito", "inimigo", 
-    "habilidade", "chefe", "vendedor", "grupo", "protagonista"
+    "habilidade", "chefe", "vendedor", "grupo"
 }
 
 # Lista de relações válidas conforme o schema
@@ -61,7 +61,7 @@ PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que gera consultas pa
 
 SCHEMA DO BANCO:
 - ENTIDADES (Labels dos Nós em MAIÚSCULAS):
-  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO, :PROTAGONISTA
+  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
 
 - RELAÇÕES (Tipos de Aresta em MAIÚSCULAS):
   -[:CONTEM]-, -[:DERROTA]-, -[:USA]-, -[:LOCALIZADO_EM]-, -[:AFETA]-,

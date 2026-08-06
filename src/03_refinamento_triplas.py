@@ -22,15 +22,65 @@ def remover_acentos(texto):
 
 
 SINONIMOS_RELACAO = {
+    # sinonimos para derrota
     "vence": "derrota",
+    "venceu": "derrota",
+    "derrotou": "derrota",
+    "mata": "derrota",
+    "matou": "derrota",
+    "elimina": "derrota",
+    "eliminou": "derrota",
+    "destruiu": "derrota",
+    "destrói": "derrota",
+
+    # sinonimos para uso
     "utiliza": "usa",
     "usufrui": "usa",
+    "emprega": "usa",
+    "maneja": "usa",
+    "porta": "usa",
+    "equipa": "usa",
+
+    # sinônimos para localização
     "esta_em": "localizado_em",
+    "fica_em": "localizado_em",
+    "vive_em": "localizado_em",
+    "habita": "localizado_em",
+    "reside_em": "localizado_em",
+    "encontra_se_em": "localizado_em",
+    "situado_em": "localizado_em",
+
+    # sinônimos para pertencimento
+    "pertence_a": "membro_de",
+    "faz_parte_de": "membro_de",
+    "integra": "membro_de",
+
+    # sinonimos para criação criação
+    "criou": "cria",
+    "construiu": "cria",
+    "forjou": "cria",
+
+    # sinonimos para origem
+    "nasceu_em": "origina_se_em",
+    "originou_se_em": "origina_se_em",
+
+    # sinonimos para lidera
+    "governa": "lidera",
+    "lider": "lidera",
+    "comanda": "lidera",
+
+    # sinonimos para proteção
+    "protege": "defende",
+    "guarda": "defende",
 }
 
 INVERSAS = {
-    "e_pai_de": "eh_filho_de",
-    "e_mae_de": "eh_filho_de",
+    "possui_local": "localizado_em",
+    "tem_membro": "membro_de",
+    "liderado_por": "lidera",
+    "criado_por": "cria",
+    "derrotado_por": "derrota",
+    "protegido_por": "protege",
 }
 
 PROMPT_RESOLUCAO = '''A lista abaixo contém nomes de entidades do universo Hollow Knight.
@@ -53,8 +103,11 @@ def eh_entidade_valida(nome: str) -> bool:
 
 
 def normalizar_nome(nome):
-    n = " ".join(str(nome).split())
-    n = re.sub(r"^o |^a |^os |^as ", "", n, flags=re.IGNORECASE)
+    # Converte tudo para minúsculo logo no início
+    n = " ".join(str(nome).lower().split())
+    # Remove os artigos no início (o, a, os, as)
+    n = re.sub(r"^o |^a |^os |^as ", "", n)
+    # Remove os acentos
     n = remover_acentos(n)
     return n.strip()
 
@@ -80,7 +133,7 @@ def main():
     # 1. Primeira passagem: validação, normalização algorítmica e remoção de ruídos
     validas = []
     for i, t in enumerate(triplas):
-        if not validar_tripla(t):
+        if not validar_tripla(t) or t["evidencia"] in ("", None):
             continue
         
         origem = normalizar_nome(t["origem"])
@@ -154,7 +207,7 @@ def main():
     else:
         print("  [checkpoint] Todas as entidades já foram processadas.")
 
-    # 2. Aplicação da resolução de entidades
+    # 2. Aplicação do nome canônico para origem e destino das triplas
     for t in triplas:
         t["origem"] = mapa_aliases.get(t["origem"], t["origem"])
         t["destino"] = mapa_aliases.get(t["destino"], t["destino"])

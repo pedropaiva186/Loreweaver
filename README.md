@@ -104,3 +104,5 @@ python src/remove_knowledge_graph_duplicates.py
 A análise em lote pela IA é intensiva. O script de deduplicação possui um sistema de salvamento automático (`data/dedup_checkpoint.json`). Caso você precise interromper o processo (pressionando `Ctrl+C`) ou ocorra alguma queda de energia, basta executar o script novamente. Ele pulará os lotes já processados e continuará exatamente de onde parou.
 
 Ao final desta etapa, o grafo consolidado e limpo será salvo como `data/knowledge_graph_hk_clean.json`.
+
+docker run -it -p 7687:7687 -p 7474:7474 memgraph/memgraph-mage  

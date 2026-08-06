@@ -9,17 +9,16 @@ import sys
 import re
 from importlib import import_module
 
-import ollama
 from neo4j import GraphDatabase
 
-from util_comum import DIR_DADOS, MODEL
+from util_comum import DIR_DADOS, MODEL, chamar_modelo_sem_json
 
 URI = "bolt://localhost:7687"
 
 # Listas de validação/normalização conforme o schema
 ENTIDADES_VALIDAS = {
-    "item", "local", "npc", "conceito", "inimigo", 
-    "habilidade", "chefe", "vendedor", "grupo"
+    "item", "localizacao", "npc", "conceito", "inimigo", 
+    "habilidade", "chefe", "vendedor", "grupo", "protagonista"
 }
 
 RELACOES_VALIDAS = {
@@ -27,12 +26,6 @@ RELACOES_VALIDAS = {
     "executa_habilidade", "leva_a", "vende", "dropa", "libera",
     "cria", "eh_inimigo_de", "eh_relatado_por", "eh_membro_de", "protege"
 }
-
-def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
-    if not texto:
-        return padrao
-    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
-    return limpo.upper() if limpo else padrao
 
 CONSULTAS_CYPHER = {
     "Chefes derrotados no jogo": """
@@ -48,7 +41,7 @@ CONSULTAS_CYPHER = {
     """,
     
     "Conexões de Locais": """
-        MATCH (origem:LOCAL)-[r:LEVA_A|LOCALIZADO_EM]->(destino:LOCAL)
+        MATCH (origem:LOCALIZACAO)-[r:LEVA_A|LOCALIZADO_EM]->(destino:LOCALIZACAO)
         RETURN DISTINCT origem.nome AS origem, type(r) AS relacao, destino.nome AS destino
         LIMIT 10
     """,
@@ -64,7 +57,7 @@ PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que gera consultas pa
 
 SCHEMA DO BANCO:
 - ENTIDADES (Labels dos Nós em MAIÚSCULAS):
-  :ITEM, :LOCAL, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
+  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
 
 - PROPRIEDADES DOS NÓS:
   O único atributo de busca é 'nome'. NUNCA filtre o nome dentro do parênteses do MATCH.
@@ -85,9 +78,9 @@ EXEMPLOS DE CONSULTAS CORRETAS:
    RETURN h.nome AS habilidade, type(r) AS relacao, c.nome AS chefe
 
 3. "Quais inimigos estão em Hallownest?"
-   MATCH (i:INIMIGO)-[:LOCALIZADO_EM]->(l:LOCAL)
+   MATCH (i:INIMIGO)-[:LOCALIZADO_EM]->(l:LOCALIZACAO)
    WHERE toLower(l.nome) CONTAINS "hallownest"
-   RETURN i.nome AS inimigo, l.nome AS local
+   RETURN i.nome AS inimigo, l.nome AS localizacao
 
 REGRAS CRÍTICAS:
 - Use Rótulos e Tipos de Aresta diretamente na sintaxe do Cypher.
@@ -98,47 +91,51 @@ REGRAS CRÍTICAS:
 - FUNÇÃO TYPE: Para retornar o tipo de uma relação, SEMPRE use a função `type(r)`. NUNCA use `r.type`.
 - Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN (exemplo: v.nome AS vendedor).
 - Responda APENAS com o código Cypher puro, sem blocos de markdown.
+- Os atributos todos estao em minusculo
 
 PERGUNTA: {pergunta}
 """
 
+# Normalizando identificadores
+def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
+    if not texto:
+        return padrao
+    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
+    return limpo.upper() if limpo else padrao
 
+# Responder a pergunta do usuário usando os resultados do grafo como contexto
 def responder_pergunta_com_graphrag(pergunta, resultados_grafo):
     prompt_rag = f"""
-Você é um assistente especialista na lore de Hollow Knight.
-Responda à pergunta do usuário utilizando APENAS os fatos extraídos do banco de dados de grafos abaixo.
+    Você é um assistente especialista na lore de Hollow Knight.
+    Responda à pergunta do usuário utilizando APENAS os fatos extraídos do banco de dados de grafos abaixo.
 
-PERGUNTA DO USUÁRIO:
-{pergunta}
+    PERGUNTA DO USUÁRIO:
+    {pergunta}
 
-DADOS RECUPERADOS DO GRAFO:
-{json.dumps(resultados_grafo, ensure_ascii=False)}
+    DADOS RECUPERADOS DO GRAFO:
+    {json.dumps(resultados_grafo, ensure_ascii=False)}
 
-RESPOSTA (seja claro, conciso e natural):
-"""
-    response = ollama.chat(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt_rag}],
-        options={"temperature": 0.2}
-    )
-    return response["message"]["content"]
+    RESPOSTA (seja claro, conciso e natural):
+    """
 
+    return chamar_modelo_sem_json(prompt_rag, temperature=0.2)
 
+# Função para carregar triplas refinadas no Memgraph usando Rótulos e Relações Nativas
 def carregar_no_memgraph(driver, triplas):
     with driver.session() as sessao:
         sessao.run("MATCH (n) DETACH DELETE n")
         for t in triplas:
-            # 1. Normaliza tipos de origem, destino e relação
+            # 1. etapa de normalização de tipos de origem, destino e relação
             raw_origem = t.get("tipo_origem", "conceito").lower()
             raw_destino = t.get("tipo_destino", "conceito").lower()
             raw_rel = t.get("relacao", "afeta").lower()
 
-            # Valida contra o schema (fallback para CONCEITO / AFETA se inválido)
+            # Valida com o schema (fallback para CONCEITO / AFETA se inválido)
             label_origem = sanitizar_identificador(raw_origem if raw_origem in ENTIDADES_VALIDAS else "conceito")
             label_destino = sanitizar_identificador(raw_destino if raw_destino in ENTIDADES_VALIDAS else "conceito")
             tipo_relacao = sanitizar_identificador(raw_rel if raw_rel in RELACOES_VALIDAS else "afeta")
 
-            # 2. Insere usando Rótulos e Relação Nativos
+            # 2. Insere o nó e aresta no banco de grafos utilizando Rótulos e Relações Nativas
             query = f"""
             MERGE (a:`{label_origem}` {{nome: $origem}})
             MERGE (b:`{label_destino}` {{nome: $destino}})
@@ -165,13 +162,11 @@ def executar(driver, cypher):
 
 
 def gerar_cypher_com_llm(pergunta):
-    response = ollama.chat(
-        model=MODEL,
-        format="",
-        messages=[{"role": "user", "content": PROMPT_TEXT2CYPHER.format(pergunta=pergunta)}],
-        options={"temperature": 0.0, "num_ctx": 32768, "num_predict": 1024},
-    )
-    cypher = response["message"]["content"].strip()
+    cypher = chamar_modelo_sem_json(
+        PROMPT_TEXT2CYPHER.format(pergunta=pergunta),
+        temperature=0.0,
+        max_tokens=1024,
+    ).strip()
     cypher = re.sub(r"^```(?:cypher)?\n|```$", "", cypher, flags=re.IGNORECASE).strip()
     return cypher
 
@@ -197,7 +192,7 @@ def main():
     carregar_no_memgraph(driver, triplas)
 
     print("=" * 80)
-    print("🎮 EXPLORADOR DA LORE — HOLLOW KNIGHT (CYPHER NATIVO) 🎮")
+    print("EXPLORADOR DA LORE — HOLLOW KNIGHT (CYPHER NATIVO)")
     print("=" * 80)
 
     for titulo, cypher in CONSULTAS_CYPHER.items():
@@ -215,9 +210,7 @@ def main():
 
     if "--llm" in sys.argv:
         perguntas = [
-            "Quais itens o vendedor sly vende?",
-            "Qual habilidade do cavaleiro afeta ou derrota o chefe?",
-            "Quais inimigos estão em hallownest?"
+            "Como eu faco um script python que gera consultas cypher para o Memgraph?",
         ]
         
         print("\n" + "=" * 80)

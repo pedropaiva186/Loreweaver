@@ -61,41 +61,55 @@ PROMPT_TEXT2CYPHER = """Você é um especialista em Cypher que gera consultas pa
 
 SCHEMA DO BANCO:
 - ENTIDADES (Labels dos Nós em MAIÚSCULAS):
-  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO
-
-- PROPRIEDADES DOS NÓS:
-  O único atributo de busca é 'nome'. NUNCA filtre o nome dentro do parênteses do MATCH.
+  :ITEM, :LOCALIZACAO, :NPC, :CONCEITO, :INIMIGO, :HABILIDADE, :CHEFE, :VENDEDOR, :GRUPO, :PROTAGONISTA
 
 - RELAÇÕES (Tipos de Aresta em MAIÚSCULAS):
-  -[:CONTEM]->, -[:DERROTA]->, -[:USA]->, -[:LOCALIZADO_EM]->, -[:AFETA]->,
-  -[:REQUER]->, -[:EXECUTA_HABILIDADE]->, -[:LEVA_A]->, -[:VENDE]->, -[:DROPA]->,
-  -[:LIBERA]->, -[:CRIA]->, -[:EH_INIMIGO_DE]->, -[:EH_RELATADO_POR]->,
-  -[:EH_MEMBRO_DE]->, -[:PROTEGE]->
+  -[:CONTEM]-, -[:DERROTA]-, -[:USA]-, -[:LOCALIZADO_EM]-, -[:AFETA]-,
+  -[:REQUER]-, -[:EXECUTA_HABILIDADE]-, -[:LEVA_A]-, -[:VENDE]-, -[:DROPA]-,
+  -[:LIBERA]-, -[:CRIA]-, -[:EH_INIMIGO_DE]-, -[:EH_RELATADO_POR]-,
+  -[:EH_MEMBRO_DE]-, -[:PROTEGE]-
 
-EXEMPLOS DE CONSULTAS CORRETAS:
-1. "O que o vendedor vende?"
-   MATCH (v:VENDEDOR)-[r:VENDE]->(i:ITEM) 
-   RETURN v.nome AS vendedor, i.nome AS item
-
-2. "Qual habilidade afeta ou derrota o chefe?"
-   MATCH (h:HABILIDADE)-[r:AFETA|DERROTA]->(c:CHEFE)
-   RETURN h.nome AS habilidade, type(r) AS relacao, c.nome AS chefe
-
-3. "Quais inimigos estão em Hallownest?"
-   MATCH (i:INIMIGO)-[:LOCALIZADO_EM]->(l:LOCALIZACAO)
-   WHERE toLower(l.nome) CONTAINS "hallownest"
-   RETURN i.nome AS inimigo, l.nome AS localizacao
+OBJETIVO PRINCIPAL:
+Você deve gerar consultas que maximizem o CONTEXTO NARRATIVO. 
+Sempre que consultar uma relação `[r]`, você DEVE OBRIGATORIAMENTE retornar `r.evidencia AS contexto`. É lá que está a lore rica do jogo.
 
 REGRAS CRÍTICAS:
-- Use Rótulos e Tipos de Aresta diretamente na sintaxe do Cypher.
-- NUNCA invente Rótulos (Labels). Use apenas os da lista acima.
-- PROIBIDO usar propriedades dentro do MATCH (ex: `(:NPC {{nome: "Cavaleiro"}})` está ERRADO).
-- Para filtrar nomes específicos, você deve OBRIGATORIAMENTE usar a cláusula `WHERE toLower(n.nome) CONTAINS "texto_em_minusculo"`.
-- SINTAXE DO OU (|): Para múltiplas relações, NUNCA use parênteses. O correto é `-[r:AFETA|DERROTA]->` (e não `-[r:(AFETA|DERROTA)]->`).
-- FUNÇÃO TYPE: Para retornar o tipo de uma relação, SEMPRE use a função `type(r)`. NUNCA use `r.type`.
-- Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN (exemplo: v.nome AS vendedor).
-- Responda APENAS com o código Cypher puro, sem blocos de markdown.
-- Os atributos todos estao em minusculo
+1. Para perguntas do tipo "Quem é X?", "Fale sobre X" ou "História de X" (Ego Graph):
+   - Use relacionamentos NÃO-DIRECIONADOS `-[r]-` para pegar tudo que entra e sai do nó.
+2. Filtragem de Nomes (Desambiguação):
+   - NUNCA use propriedades dentro do parênteses (ex: `(:NPC {{nome: "X"}})` está ERRADO).
+   - SEMPRE use `WHERE toLower(n.nome) CONTAINS "texto"`.
+3. Sintaxe de Múltiplas Relações:
+   - O correto é `-[r:AFETA|DERROTA]-` e NUNCA `-[r:(AFETA|DERROTA)]-`.
+4. Retorno Obrigatório:
+   - Sempre inclua `r.evidencia AS contexto` se houver uma variável de relação `r` na consulta.
+   - Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN.
+5. Formato da Resposta:
+   - Responda APENAS com o código Cypher puro, sem marcações markdown.
+6. ROTAS E CAMINHOS GEOGRÁFICOS (PATHFINDING):
+   - Memgraph NÃO suporta a função `shortestPath()` do Neo4j. NUNCA use `shortestPath()`.
+   - Para rotas geográficas, RESTRINJA a busca APENAS às relações espaciais para evitar caminhos ilógicos (ex: através de itens ou vendedores). Use `-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-`.
+   - Use `WITH p LIMIT 1` para pegar apenas o caminho mais curto encontrado.
+   - Use `UNWIND nodes(p) AS n` E `UNWIND relationships(p) AS r` para retornar os passos e a lore.
+
+EXEMPLOS DE CONSULTAS CORRETAS:
+- "Quem é Sly?" ou "Fale sobre Sly":
+  MATCH (n)-[r]-(m) 
+  WHERE toLower(n.nome) CONTAINS "sly" 
+  RETURN n.nome AS entidade_foco, type(r) AS relacao, m.nome AS entidade_relacionada, r.evidencia AS contexto LIMIT 30
+
+- "Quais itens são encontrados na Bacia Antiga?":
+  MATCH (i:ITEM)-[r:LOCALIZADO_EM]->(l:LOCALIZACAO)
+  WHERE toLower(l.nome) CONTAINS "bacia antiga"
+  RETURN i.nome AS item, type(r) AS relacao, l.nome AS localizacao, r.evidencia AS contexto LIMIT 20
+
+- "Qual o caminho entre Dirtmouth e a Cidade das Lágrimas?":
+  MATCH p = (origem:LOCALIZACAO)-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-(destino:LOCALIZACAO)
+  WHERE toLower(origem.nome) CONTAINS "dirtmouth" AND toLower(destino.nome) CONTAINS "cidade das lagrimas"
+  WITH p LIMIT 1
+  UNWIND relationships(p) AS r
+  UNWIND nodes(p) AS n
+  RETURN DISTINCT n.nome AS passo, type(r) AS relacao, r.evidencia AS contexto LIMIT 50
 
 PERGUNTA: {pergunta}
 """

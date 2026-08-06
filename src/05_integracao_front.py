@@ -54,8 +54,16 @@ def chat():
         return jsonify({"response": resposta_final})
 
     except Exception as e:
-        print(f"Erro durante o processamento: {e}")
-        return jsonify({"response": f"Desculpe, ocorreu um erro ao processar sua pergunta: {str(e)}"})
+        # We still print the real error to the terminal so YOU can debug it
+        print(f"Erro interno no backend (Memgraph/LLM): {e}")
+        
+        # But we send a friendly, formatted message back to the frontend
+        mensagem_amigavel = (
+            "Eu não posso responder essa pergunta. Você pode perguntar outras coisas, como: "
+            "*\"Onde encontrar a chave para abrir a cidade das lágrimas?\"*"
+        )
+        
+        return jsonify({"response": mensagem_amigavel})
 
 if __name__ == '__main__':
     print("Starting LoreWeaver API Server on http://127.0.0.1:5000")

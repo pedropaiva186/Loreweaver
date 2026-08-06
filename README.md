@@ -68,17 +68,9 @@ GEMINI_API_KEY=sua_chave_aqui
 
 ---
 
-## Fluxo de execução atual
+## Fluxo de execução do loreweaver
 
-### 0. Subir o Memgraph
-
-Antes de rodar o script 04, inicie o container do Memgraph:
-
-```bash
-docker run -it -p 7687:7687 -p 7444:7444 memgraph/memgraph-mage
-```
-
-### 1. Script 01 - Obter a wiki
+### 0. Script 01 - Obter a wiki
 
 Esse script acessa a wiki de Hollow Knight e salva os artigos limpos em Markdown.
 
@@ -86,7 +78,7 @@ Esse script acessa a wiki de Hollow Knight e salva os artigos limpos em Markdown
 python src/01_obter_wiki.py
 ```
 
-### 2. Script 02 - Extração de triplas
+### 1. Script 02 - Extração de triplas
 
 Esse script lê o corpus gerado no passo anterior e usa o Gemini para extrair triplas de conhecimento.
 
@@ -98,7 +90,7 @@ Os resultados são salvos em:
 
 - `data/hollowknight_pipeline/triplas_brutas.json`
 
-### 3. Script 03 - Refinamento das triplas
+### 2. Script 03 - Refinamento das triplas
 
 Esse script normaliza entidades, relações e remove ruídos, produzindo um conjunto mais limpo para o banco de grafos.
 
@@ -109,6 +101,15 @@ python src/03_refinamento_triplas.py
 O arquivo gerado é:
 
 - `data/hollowknight_pipeline/triplas_refinadas.json`
+
+### 3. Subir o Memgraph
+
+Antes de rodar o script 04, inicie o container do Memgraph:
+
+```bash
+docker run -it -p 7687:7687 -p 7444:7444 memgraph/memgraph-mage
+```
+
 
 ### 4. Script 04 - Memgraph e Cypher
 

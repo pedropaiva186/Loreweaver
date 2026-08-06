@@ -4,34 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoreWeaver - Hollow Knight Knowledge AI</title>
+
+
+    <!-- iOS -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+
+    <!-- Desktop -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+
+    <!-- Android -->
+    <link rel="manifest" href="assets/site.webmanifest">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+
+
 </head>
 <body>
     <main class="app-root">
-        <!-- Particles -->
+        <!-- Partículas -->
         <canvas id="particles"></canvas>
 
-        <!-- The Audio Element (Hidden from view, set to loop) -->
+        <!-- Elemento de áudio -->
         <audio id="bg-music" loop autoplay>
             <source src="/assets/hollowknight_theme.mp3" type="audio/mpeg">
             Seu navegador não suporta o elemento de áudio.
         </audio>
 
-        <!-- The Toggle Button -->
+        <!-- Botão de ativar/desativar música -->
         <button id="music-toggle" class="music-btn">🔊</button>
 
-        <!-- Subtle radial gradient backdrop -->
+        <!-- Gradiente -->
         <div class="app-backdrop"></div>
 
-        <!-- Main layout -->
+        <!-- Layout principal -->
         <div class="app-container">
             
             <!-- Header -->
             <header class="app-header">
-                <!-- Logo mark -->
+                <!-- Logo do hollow knight -->
                 <div class="logo-container">
                     <div class="logo-wrapper">
                         <img 
@@ -45,7 +62,7 @@
                 </div>
 
                 <h2 class="app-title">LoreWeaver</h2>
-                <p class="app-subtitle">A Knowledge-Based AI for Hollow Knight</p>
+                <p class="app-subtitle">Um assistente de conhecimento para Hollow Knight</p>
 
                 <div class="ornament-line divider-wrapper">
                     <img 
@@ -60,10 +77,10 @@
                 <p class="app-tech-note">Powered by RAG + Knowledge Graph</p>
             </header>
 
-            <!-- Chat area -->
+            <!-- Área do chat -->
             <section class="main-chat-area">
                 
-                <!-- Welcome State -->
+                <!-- Boas-vindas -->
                 <div id="welcome-state" class="welcome-container">
                     <div class="welcome-symbol">
                         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -81,19 +98,19 @@
                         </svg>
                     </div>
 
-                    <h1 class="welcome-title">Ask anything about Hallownest.</h1>
+                    <h1 class="welcome-title">Pergunte qualquer coisa sobre Hallownest.</h1>
                     <p class="welcome-description">
-                        LoreWeaver is an AI assistant capable of answering questions about Hollow Knight using a structured knowledge base extracted from the game's wiki.
+                        LoreWeaver é um assistente de IA capaz de responder perguntas sobre as terras de Hallownest usando uma base de conhecimento estruturada extraída do wiki do jogo.
                     </p>
 
                     <div id="welcome-suggestions" class="chips-container">
-                        <!-- Suggestion chips injected via JS -->
+                        <!-- Chips -->
                     </div>
                 </div>
 
-                <!-- Chat History -->
+                <!-- Histórico do chat -->
                 <div id="chat-history" class="chat-scroll chat-container" style="display: none;">
-                    <!-- Message bubbles injected via JS -->
+                    <!-- Bolhas de mensagem -->
                     <div id="typing-indicator" class="msg-enter assistant-message" style="display: none;">
                         <div class="avatar-glow avatar-wrapper">
                             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -121,11 +138,11 @@
                 </div>
             </section>
 
-            <!-- Input area -->
+            <!-- Area do input -->
             <div class="input-section">
-                <!-- Inline Suggestion chips once conversation starts -->
+                <!-- Sugestões inline -->
                 <div id="inline-suggestions" class="chips-container inline-chips" style="display: none;">
-                    <!-- Inline chips injected via JS -->
+                    <!-- Sugestões -->
                 </div>
 
                 <div class="input-wrapper">
@@ -144,7 +161,7 @@
                 </div>
 
                 <p class="disclaimer-text">
-                    LoreWeaver may produce inaccuracies. Cross-reference with the Hollow Knight Wiki for canonical sources.
+                    LoreWeaver pode produzir informações incorretas. Verifique a wiki do Hollow Knight para fontes canônicas.
                 </p>
             </div>
         </div>

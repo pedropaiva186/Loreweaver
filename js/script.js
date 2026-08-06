@@ -1,13 +1,7 @@
-/**
- * LoreWeaver - Hollow Knight Knowledge AI
- * Vanilla JavaScript implementation - API Connected
- */
-
 document.addEventListener('DOMContentLoaded', () => {
     const music = document.getElementById('bg-music');
     const musicBtn = document.getElementById('music-toggle');
 
-    // Set volume to 20% so it's a pleasant background ambiance
     music.volume = 0.2;
 
     musicBtn.addEventListener('click', () => {
@@ -23,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // ─── State Management ──────────────────────────────────────────────────────────
+    // ─── gerenciador de estado ──────────────────────────────────────────────────────────
     let messages = [];
     let isLoading = false;
     let hasMessages = false;
 
-    // ─── DOM Elements ─────────────────────────────────────────────────────────────
+    // ─── elementos da interface ─────────────────────────────────────────────────────────────
     const ui = {
         welcomeState: document.getElementById('welcome-state'),
         chatHistory: document.getElementById('chat-history'),
@@ -68,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </svg>
     `;
 
-    // ─── Initialization ───────────────────────────────────────────────────────────
+    // ─── Inicialização ───────────────────────────────────────────────────────────
     
     function init() {
         renderSuggestions();
@@ -96,13 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ─── Chat Logic ───────────────────────────────────────────────────────────────
+    // ─── Lógica do Chat ───────────────────────────────────────────────────────────────
 
     async function handleSend(textOverride) {
         const text = textOverride || ui.chatInput.value.trim();
         if (!text || isLoading) return;
 
-        // Transition from Welcome to Chat if first message
+        // Trasição do estado de boas-vindas para o histórico de chat
         if (!hasMessages) {
             hasMessages = true;
             ui.welcomeState.style.display = 'none';
@@ -110,21 +104,21 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.inlineSuggestions.style.display = 'flex';
         }
 
-        // Add User Message
+        // Adicionar mensagem do usuário
         appendMessage('user', text);
         
-        // Reset Input
+        // Resetar input e atualizar layout
         ui.chatInput.value = '';
         updateInputLayout();
         
-        // Set Loading State
+        // Mostrar indicador de digitação e desabilitar botão de envio
         isLoading = true;
         updateSendButtonState();
-        ui.inlineSuggestions.style.display = 'none'; // Hide inline chips while loading
+        ui.inlineSuggestions.style.display = 'none'; // esconder chips durante a resposta
         ui.typingIndicator.style.display = 'flex';
         scrollToBottom();
 
-        // API Call to Python Backend
+        // Chamada da API para obter a resposta do backend
         try {
             const response = await fetch('http://127.0.0.1:5000/api/chat', {
                 method: 'POST',
@@ -135,29 +129,29 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`Erro http! status: ${response.status}`);
             }
 
             const data = await response.json();
 
-            // Clear loading state
+            // limpar estado de carregamento e mostrar chips novamente
             isLoading = false;
             ui.typingIndicator.style.display = 'none';
             ui.inlineSuggestions.style.display = 'flex'; // Show chips again
             
-            // Render backend response
+            // Adicionar resposta do assistente
             appendMessage('assistant', data.response);
             updateSendButtonState();
 
         } catch (error) {
-            console.error("API Connection Error:", error);
+            console.error("Erro na Conexão com a API:", error);
             
-            // Clear loading state and show error message
+            // limpar estado de carregamento e mostrar chips novamente
             isLoading = false;
             ui.typingIndicator.style.display = 'none';
             ui.inlineSuggestions.style.display = 'flex';
             
-            appendMessage('assistant', "Error: Could not connect to the LoreWeaver backend. Make sure 05_api.py is running.");
+            appendMessage('assistant', "Error: Não conseguimos conectar ao backend. Certifique-se de que 05_api.py está em execução.");
             updateSendButtonState();
         }
     }
@@ -173,8 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } else {
-            // We remove the wrapping <p> tag from the template because marked.parse() 
-            // automatically generates <p>, <h1>, <ul>, etc., based on the content.
             msgDiv.innerHTML = `
                 <div class="avatar-glow avatar-wrapper">
                     ${oracleAvatarSVG}
@@ -189,13 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     }
 
-    // ─── UI Interactions ──────────────────────────────────────────────────────────
+    // ─── Interações com a UI ──────────────────────────────────────────────────────────
 
     function setupEventListeners() {
-        // Auto-resize textarea
+        // Auto resize
         ui.chatInput.addEventListener('input', updateInputLayout);
 
-        // Handle Enter key
+        // Entrada de teclado (Enter para enviar, Shift+Enter para nova linha)
         ui.chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -203,12 +195,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Send Button
+        // Botão de enviar
         ui.sendBtn.addEventListener('click', () => handleSend());
     }
 
     function updateInputLayout() {
-        // Auto resize height
         ui.chatInput.style.height = 'auto';
         ui.chatInput.style.height = Math.min(ui.chatInput.scrollHeight, 140) + 'px';
         
@@ -245,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    // ─── Particle System ──────────────────────────────────────────────────────────
+    // ─── Sistema de Partículas ──────────────────────────────────────────────────────────
     
     function initParticles() {
         const canvas = document.getElementById('particles');
@@ -304,6 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
         draw();
     }
 
-    // Run application
+    // Rodar a aplicação
     init();
 });

@@ -7,6 +7,7 @@ executa consultas Cypher e demonstra text-to-Cypher com schema rigoroso.
 import json
 import sys
 import re
+import unicodedata
 from importlib import import_module
 
 from neo4j import GraphDatabase
@@ -27,7 +28,6 @@ RELACOES_VALIDAS = {
     "executa_habilidade", "leva_a", "vende", "dropa", "libera",
     "cria", "eh_inimigo_de", "eh_relatado_por", "eh_membro_de", "protege"
 }
-
 
 # Dicionário com consultas básicas de exemplo para demonstração
 CONSULTAS_CYPHER = {
@@ -100,9 +100,33 @@ REGRAS CRÍTICAS:
 PERGUNTA: {pergunta}
 """
 
-def gerar_cypher_com_llm(pergunta):
+
+def remover_acentos(texto: str) -> str:
+    """Remove acentos e marcas combinantes de uma string."""
+    if texto is None:
+        return ""
+    nfkd = unicodedata.normalize("NFKD", str(texto))
+    return "".join([c for c in nfkd if not unicodedata.combining(c)])
+
+
+def limpar_texto(texto: str) -> str:
+    """Limpa o texto para uso em identificação/checagem de labels e prompts.
+
+    - remove acentos
+    - remove espaços extras
+    - converte para minúsculas
+    """
+    if texto is None:
+        return ""
+    s = str(texto).strip()
+    s = remover_acentos(s)
+    s = re.sub(r"\s+", " ", s)
+    return s.lower()
+
+def gerar_cypher_com_llm(pergunta: str) -> str:
+    pergunta_limpa = limpar_texto(pergunta)
     cypher = chamar_modelo_sem_json(
-        PROMPT_TEXT2CYPHER.format(pergunta=pergunta),
+        PROMPT_TEXT2CYPHER.format(pergunta=pergunta_limpa),
         temperature=0.0,
         max_tokens=1024,
     ).strip()
@@ -114,7 +138,9 @@ def gerar_cypher_com_llm(pergunta):
 def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
     if not texto:
         return padrao
-    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
+    # Remove acentos e normaliza espaços antes de sanitizar
+    texto_limpo = limpar_texto(texto)
+    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto_limpo).lower().strip('_')
     return limpo.upper() if limpo else padrao
 
 # Responder a pergunta do usuário usando os resultados do grafo como contexto
@@ -131,7 +157,6 @@ def responder_pergunta_com_graphrag(pergunta, resultados_grafo):
 
     RESPOSTA (seja claro, conciso e natural):
     """
-
     return chamar_modelo_sem_json(prompt_rag, temperature=0.2)
 
 # Função para carregar triplas refinadas no Memgraph usando Rótulos e Relações Nativas
@@ -140,9 +165,9 @@ def carregar_no_memgraph(driver, triplas):
         sessao.run("MATCH (n) DETACH DELETE n")
         for t in triplas:
             # 1. etapa de normalização de tipos de origem, destino e relação
-            raw_origem = t.get("tipo_origem", "conceito").lower()
-            raw_destino = t.get("tipo_destino", "conceito").lower()
-            raw_rel = t.get("relacao", "afeta").lower()
+            raw_origem = limpar_texto(t.get("tipo_origem", "conceito"))
+            raw_destino = limpar_texto(t.get("tipo_destino", "conceito"))
+            raw_rel = limpar_texto(t.get("relacao", "afeta"))
 
             # Valida com o schema (fallback para CONCEITO / AFETA se inválido)
             label_origem = sanitizar_identificador(raw_origem if raw_origem in ENTIDADES_VALIDAS else "conceito")
@@ -215,7 +240,7 @@ def main():
 
     if "--llm" in sys.argv:
         perguntas = [
-            "Como eu faco um script python que gera consultas cypher para o Memgraph?",
+            "Qual rota para sair de dirtmouth e chegar na encuzilhada esquecida?",
         ]
         
         print("\n" + "=" * 80)
@@ -223,20 +248,25 @@ def main():
         print("=" * 80)
         
         for pergunta in perguntas:
-            print(f"\n{pergunta}")
+            print(f"\nPergunta: {pergunta}")
             try:
                 cypher = gerar_cypher_com_llm(pergunta)
-                print(f"Cypher gerado: {cypher}")
-                resultados = executar(driver, cypher)
-                #for linha in resultados:
-                #    print(f"  → {linha}")
-                resposta_final = responder_pergunta_com_graphrag(pergunta, resultados)
-                print(f"Resposta gerado pelo GraphRAG: {resposta_final}")
-            except Exception as erro:
-                print(f"Consulta falhou: {erro}")
-
-    driver.close()
-    print("\nExploração da lore concluída!")
+                if not cypher:
+                    print("  [Erro] Falha ao gerar cypher.")
+                    continue
+                
+                print(f"\n[Cypher Gerado]:\n{cypher}\n")
+                
+                # Executa no banco de grafos
+                resultados_grafo = executar(driver, cypher)
+                print(f"[Resultados Brutos]: {resultados_grafo}\n")
+                
+                # Responde via RAG usando os dados extraídos
+                resposta_final = responder_pergunta_com_graphrag(pergunta, resultados_grafo)
+                print(f"[Resposta RAG]:\n{resposta_final}")
+                
+            except Exception as e:
+                print(f"  [Erro ao processar LLM/Execução]: {e}")
 
 if __name__ == "__main__":
     main()

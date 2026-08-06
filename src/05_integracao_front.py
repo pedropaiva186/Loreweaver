@@ -16,12 +16,12 @@ try:
     driver.verify_connectivity()
     print("✅ Connected to Memgraph successfully.")
 except Exception as e:
-    print(f"❌ Failed to connect to Memgraph: {e}")
+    print(f" Falha ao conectar com o memgraph: {e}")
     driver = None
 
 @app.route('/', methods=['GET'])
 def home():
-    return "LoreWeaver API is running! The frontend should connect to /api/chat."
+    return "A API do loreweaver está rodando! O frontend deve se conectar a /api/chat."
 
 @app.route('/api/chat', methods=['POST'])
 def chat():

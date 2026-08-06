@@ -53,8 +53,11 @@ def eh_entidade_valida(nome: str) -> bool:
 
 
 def normalizar_nome(nome):
-    n = " ".join(str(nome).split())
-    n = re.sub(r"^o |^a |^os |^as ", "", n, flags=re.IGNORECASE)
+    # Converte tudo para minúsculo logo no início
+    n = " ".join(str(nome).lower().split())
+    # Remove os artigos no início (o, a, os, as)
+    n = re.sub(r"^o |^a |^os |^as ", "", n)
+    # Remove os acentos
     n = remover_acentos(n)
     return n.strip()
 
@@ -80,7 +83,7 @@ def main():
     # 1. Primeira passagem: validação, normalização algorítmica e remoção de ruídos
     validas = []
     for i, t in enumerate(triplas):
-        if not validar_tripla(t):
+        if not validar_tripla(t) or t["evidencia"] in ("", None):
             continue
         
         origem = normalizar_nome(t["origem"])
@@ -154,7 +157,7 @@ def main():
     else:
         print("  [checkpoint] Todas as entidades já foram processadas.")
 
-    # 2. Aplicação da resolução de entidades
+    # 2. Aplicação do nome canônico para origem e destino das triplas
     for t in triplas:
         t["origem"] = mapa_aliases.get(t["origem"], t["origem"])
         t["destino"] = mapa_aliases.get(t["destino"], t["destino"])

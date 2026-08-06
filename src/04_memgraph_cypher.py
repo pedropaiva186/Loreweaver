@@ -19,7 +19,7 @@ URI = "bolt://localhost:7687"
 # Listas de validação/normalização conforme o schema
 ENTIDADES_VALIDAS = {
     "item", "local", "npc", "conceito", "inimigo", 
-    "habilidade", "chefe", "vendedor", "grupo"
+    "habilidade", "chefe", "vendedor", "grupo", "protagonista"
 }
 
 RELACOES_VALIDAS = {
@@ -27,12 +27,6 @@ RELACOES_VALIDAS = {
     "executa_habilidade", "leva_a", "vende", "dropa", "libera",
     "cria", "eh_inimigo_de", "eh_relatado_por", "eh_membro_de", "protege"
 }
-
-def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
-    if not texto:
-        return padrao
-    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
-    return limpo.upper() if limpo else padrao
 
 CONSULTAS_CYPHER = {
     "Chefes derrotados no jogo": """
@@ -102,20 +96,28 @@ REGRAS CRÍTICAS:
 PERGUNTA: {pergunta}
 """
 
+# Normalizando identificadores
+def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
+    if not texto:
+        return padrao
+    limpo = re.sub(r'[^a-zA-Z0-9_]', '_', texto).lower().strip('_')
+    return limpo.upper() if limpo else padrao
 
+# Responder a pergunta do usuário usando os resultados do grafo como contexto
 def responder_pergunta_com_graphrag(pergunta, resultados_grafo):
     prompt_rag = f"""
-Você é um assistente especialista na lore de Hollow Knight.
-Responda à pergunta do usuário utilizando APENAS os fatos extraídos do banco de dados de grafos abaixo.
+    Você é um assistente especialista na lore de Hollow Knight.
+    Responda à pergunta do usuário utilizando APENAS os fatos extraídos do banco de dados de grafos abaixo.
 
-PERGUNTA DO USUÁRIO:
-{pergunta}
+    PERGUNTA DO USUÁRIO:
+    {pergunta}
 
-DADOS RECUPERADOS DO GRAFO:
-{json.dumps(resultados_grafo, ensure_ascii=False)}
+    DADOS RECUPERADOS DO GRAFO:
+    {json.dumps(resultados_grafo, ensure_ascii=False)}
 
-RESPOSTA (seja claro, conciso e natural):
-"""
+    RESPOSTA (seja claro, conciso e natural):
+    """
+
     response = ollama.chat(
         model=MODEL,
         messages=[{"role": "user", "content": prompt_rag}],
@@ -123,22 +125,22 @@ RESPOSTA (seja claro, conciso e natural):
     )
     return response["message"]["content"]
 
-
+# Função para carregar triplas refinadas no Memgraph usando Rótulos e Relações Nativas
 def carregar_no_memgraph(driver, triplas):
     with driver.session() as sessao:
         sessao.run("MATCH (n) DETACH DELETE n")
         for t in triplas:
-            # 1. Normaliza tipos de origem, destino e relação
+            # 1. etapa de normalização de tipos de origem, destino e relação
             raw_origem = t.get("tipo_origem", "conceito").lower()
             raw_destino = t.get("tipo_destino", "conceito").lower()
             raw_rel = t.get("relacao", "afeta").lower()
 
-            # Valida contra o schema (fallback para CONCEITO / AFETA se inválido)
+            # Valida com o schema (fallback para CONCEITO / AFETA se inválido)
             label_origem = sanitizar_identificador(raw_origem if raw_origem in ENTIDADES_VALIDAS else "conceito")
             label_destino = sanitizar_identificador(raw_destino if raw_destino in ENTIDADES_VALIDAS else "conceito")
             tipo_relacao = sanitizar_identificador(raw_rel if raw_rel in RELACOES_VALIDAS else "afeta")
 
-            # 2. Insere usando Rótulos e Relação Nativos
+            # 2. Insere o nó e aresta no banco de grafos utilizando Rótulos e Relações Nativas
             query = f"""
             MERGE (a:`{label_origem}` {{nome: $origem}})
             MERGE (b:`{label_destino}` {{nome: $destino}})

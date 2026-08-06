@@ -199,6 +199,8 @@ body {
     overflow-y: auto;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
     max-height: calc(100vh - 260px);
 }
 

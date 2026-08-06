@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     musicBtn.addEventListener('click', () => {
         if (music.paused) {
             music.play();
-            musicBtn.innerText = '🔇';
+            musicBtn.innerText = '🔊';
         } else {
             music.pause();
-            musicBtn.innerText = '🔊';
+            musicBtn.innerText = '🔇';
         }
     });
 });

@@ -192,7 +192,7 @@
     {
       "origem": "cavaleiro da colmeia",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "rainha vespa",
       "tipo_destino": "npc",
       "evidencia": "ultimo protetor da sua monarca, a Rainha da Colmeia Vespa",
@@ -903,7 +903,7 @@
     {
       "origem": "besta-alada selvagem",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "brasao da besta",
       "tipo_destino": "item",
       "evidencia": "ela protege a entrada para a sala que liberamos o Brasao Da Besta",
@@ -966,7 +966,7 @@
     {
       "origem": "hornet",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "marca do rei",
       "tipo_destino": "item",
       "evidencia": "Hornet pode ser combatida aqui, guardando o acesso a Marca do Rei.",
@@ -1641,7 +1641,7 @@
     {
       "origem": "carcaca deslumbrante",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "cidade das lagrimas",
       "tipo_destino": "localizacao",
       "evidencia": "encontrada em uma parede secreta na Cidade das Lagrimas, em uma das salas guardadas pelos guardioes da cidade",
@@ -1758,7 +1758,7 @@
     {
       "origem": "cavaleiros sentinela",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "lurien o observador",
       "tipo_destino": "npc",
       "evidencia": "Eles protegem Lurien o Observador",
@@ -2298,7 +2298,7 @@
     {
       "origem": "dryya",
       "tipo_origem": "npc",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "dama branca",
       "tipo_destino": "npc",
       "evidencia": "Ela foi encarregada de ficar de guarda sobre a Dama Branca",
@@ -3198,7 +3198,7 @@
     {
       "origem": "novatos grimmarios",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "chamas",
       "tipo_destino": "item",
       "evidencia": "Novatos Grimmarios que protegem ela",
@@ -3216,7 +3216,7 @@
     {
       "origem": "mestre grimmario",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "chamas",
       "tipo_destino": "item",
       "evidencia": "tres chamas podem ser coletadas que sao protegidas por Mestres Grimmarios",
@@ -3234,7 +3234,7 @@
     {
       "origem": "Pesadelo Grimmário",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "chamas",
       "tipo_destino": "item",
       "evidencia": "chamas que sao protegidas por Pesadelos Grimmarios",
@@ -3324,7 +3324,7 @@
     {
       "origem": "uumuu",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "monomon a professora",
       "tipo_destino": "npc",
       "evidencia": "Uumuu que está protegendo a Monomon a Professora",
@@ -3459,7 +3459,7 @@
     {
       "origem": "defensor do esterco",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "bosque de isma",
       "tipo_destino": "localizacao",
       "evidencia": "Este campeão do passado defende o acesso ao Bosque de Isma.",
@@ -4872,7 +4872,7 @@
     {
       "origem": "flukemunga",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "cova de lixo",
       "tipo_destino": "localizacao",
       "evidencia": "parecem que protegem a cova de lixo",
@@ -5349,7 +5349,7 @@
     {
       "origem": "Grand Mother Silk",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "the cradle",
       "tipo_destino": "localizacao",
       "evidencia": "Ela aparece no topo da área chamada The Cradle",
@@ -5619,7 +5619,7 @@
     {
       "origem": "guerreiro das almas",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "alma sombria",
       "tipo_destino": "magia",
       "evidencia": "um deles guarda a Magia Alma Sombria",
@@ -5655,7 +5655,7 @@
     {
       "origem": "musgosos",
       "tipo_origem": "grupo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "caminho verde",
       "tipo_destino": "localizacao",
       "evidencia": "Os Musgosos protegem o Caminho Verde",
@@ -5961,7 +5961,7 @@
     {
       "origem": "hornet sentinela",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "borda do reino",
       "tipo_destino": "localizacao",
       "evidencia": "na entrada da Casca Descartada na Borda do Reino",
@@ -6060,7 +6060,7 @@
     {
       "origem": "hornet",
       "tipo_origem": "npc",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "ovo negro",
       "tipo_destino": "localizacao",
       "evidencia": "protegendo o selamento do Ovo Negro",
@@ -6078,7 +6078,7 @@
     {
       "origem": "hornet",
       "tipo_origem": "npc",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "casca descartada",
       "tipo_destino": "localizacao",
       "evidencia": "Ela tambem guarda a Casca Descartada",
@@ -6672,7 +6672,7 @@
     {
       "origem": "lorde traidor",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "dama branca",
       "tipo_destino": "npc",
       "evidencia": "Ele bloqueia o caminho para a Dama Branca nos Jardins da Rainha.",
@@ -7005,7 +7005,7 @@
     {
       "origem": "marmu",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "jardins da rainha",
       "tipo_destino": "localizacao",
       "evidencia": "Marmu foi uma protetora inocente, porém forte, dos Jardins da Rainha.",
@@ -8292,7 +8292,7 @@
     {
       "origem": "armadura real",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "palacio branco",
       "tipo_destino": "localizacao",
       "evidencia": "derrotar a Armadura Real que o guarda.",
@@ -8472,7 +8472,7 @@
     {
       "origem": "receptaculo quebrado",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "asas de monarca",
       "tipo_destino": "habilidade",
       "evidencia": "guardando a habilidade Asas do Monarca",
@@ -9363,7 +9363,7 @@
     {
       "origem": "cavaleiro da colmeia",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "sangue da colmeia",
       "tipo_destino": "item",
       "evidencia": "Requer derrotar o Cavaleiro da Colmeia.",
@@ -10830,7 +10830,7 @@
     {
       "origem": "cavaleiro musgoso",
       "tipo_origem": "inimigo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "lago de unn",
       "tipo_destino": "localizacao",
       "evidencia": "O caminho para o lago e protegido por Cavaleiros Musgosos",
@@ -10857,7 +10857,7 @@
     {
       "origem": "vagabundos musgosos",
       "tipo_origem": "grupo",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "capela musgosa",
       "tipo_destino": "localizacao",
       "evidencia": "se reunem na Capela Musgosa... e o defendem com as suas proprias vidas.",
@@ -10992,7 +10992,7 @@
     {
       "origem": "uumuu",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "camara de monomon",
       "tipo_destino": "localizacao",
       "evidencia": "responsavel por defender a camara de Monomon",
@@ -11172,7 +11172,7 @@
     {
       "origem": "falso cavaleiro",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "verme",
       "tipo_destino": "inimigo",
       "evidencia": "O Falso Cavaleiro é na verdade um verme que roubou a carapaça blindada de Hegemol para proteger seus irmãos.",
@@ -11208,7 +11208,7 @@
     {
       "origem": "cavaleiro da colmeia",
       "tipo_origem": "chefe",
-      "relacao": "defende",
+      "relacao": "protege",
       "destino": "vespa",
       "tipo_destino": "npc",
       "evidencia": "antigo protetor da Vespa",

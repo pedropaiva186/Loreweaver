@@ -56,9 +56,9 @@ SINONIMOS_RELACAO = {
     "lider": "lidera",
     "comanda": "lidera",
 
-    # sinonimos para proteção
-    "protege": "defende",
-    "guarda": "defende",
+    # sinonimos para protege
+    "defende": "protege",
+    "guarda": "protege",
 }
 
 INVERSAS = {

@@ -254,7 +254,7 @@ def main():
 
     if "--llm" in sys.argv:
         perguntas = [
-            "Qual rota para sair de dirtmouth e chegar na encuzilhada esquecida?",
+            "",
         ]
         
         print("\n" + "=" * 80)

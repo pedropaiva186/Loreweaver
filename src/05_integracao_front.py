@@ -14,21 +14,21 @@ CORS(app)
 try:
     driver = GraphDatabase.driver(m_cypher.URI, auth=("", ""))
     driver.verify_connectivity()
-    print("✅ Connected to Memgraph successfully.")
+    print("Conexão com o Memgraph estabelecida.")
 except Exception as e:
-    print(f"❌ Failed to connect to Memgraph: {e}")
+    print(f" Falha ao conectar com o memgraph: {e}")
     driver = None
 
 @app.route('/', methods=['GET'])
 def home():
-    return "LoreWeaver API is running! The frontend should connect to /api/chat."
+    return "A API do loreweaver está rodando! O frontend deve se conectar a /api/chat."
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     
     if not data or 'message' not in data:
-        return jsonify({"error": "No message provided"}), 400
+        return jsonify({"error": "Nenhuma mensagem fornecida"}), 400
 
     user_message = data['message']
 

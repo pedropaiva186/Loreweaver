@@ -14,6 +14,15 @@
         <!-- Particles -->
         <canvas id="particles"></canvas>
 
+        <!-- The Audio Element (Hidden from view, set to loop) -->
+        <audio id="bg-music" loop autoplay>
+            <source src="/assets/hollowknight_theme.mp3" type="audio/mpeg">
+            Seu navegador não suporta o elemento de áudio.
+        </audio>
+
+        <!-- The Toggle Button -->
+        <button id="music-toggle" class="music-btn">🔊</button>
+
         <!-- Subtle radial gradient backdrop -->
         <div class="app-backdrop"></div>
 
@@ -25,16 +34,13 @@
                 <!-- Logo mark -->
                 <div class="logo-container">
                     <div class="logo-wrapper">
-                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="22" cy="22" r="21" stroke="#2A3440" stroke-width="1" fill="#11151B" />
-                            <circle cx="22" cy="22" r="15" stroke="#8EC5FF" stroke-width="0.5" stroke-opacity="0.25" stroke-dasharray="3 2.5" />
-                            <circle cx="22" cy="22" r="8" stroke="#8EC5FF" stroke-width="0.8" stroke-opacity="0.4" fill="none" />
-                            <circle cx="22" cy="22" r="3" fill="#8EC5FF" fill-opacity="0.5" />
-                            <line x1="22" y1="1" x2="22" y2="14" stroke="#8EC5FF" stroke-width="0.7" stroke-opacity="0.5" />
-                            <line x1="22" y1="30" x2="22" y2="43" stroke="#8EC5FF" stroke-width="0.7" stroke-opacity="0.5" />
-                            <line x1="1" y1="22" x2="14" y2="22" stroke="#8EC5FF" stroke-width="0.7" stroke-opacity="0.5" />
-                            <line x1="30" y1="22" x2="43" y2="22" stroke="#8EC5FF" stroke-width="0.7" stroke-opacity="0.5" />
-                        </svg>
+                        <img 
+                            src="https://cdn2.steamgriddb.com/icon/602d1305678a8d5fdb372271e980da6a/32/256x256.png" 
+                            alt="LoreWeaver Logo" 
+                            width="48"
+                            height="48"
+                            class="app-logo-img"
+                        />
                     </div>
                 </div>
 
@@ -42,11 +48,13 @@
                 <p class="app-subtitle">A Knowledge-Based AI for Hollow Knight</p>
 
                 <div class="ornament-line divider-wrapper">
-                    <svg width="24" height="10" viewBox="0 0 24 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 5 L0 5 M12 5 L6 1 M12 5 L6 9" stroke="#2A3440" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M12 5 L24 5 M12 5 L18 1 M12 5 L18 9" stroke="#2A3440" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" />
-                        <circle cx="12" cy="5" r="1.5" fill="#2A3440" />
-                    </svg>
+                    <img 
+                        src="https://static.wikia.nocookie.net/hollowknight/images/3/34/Kingsoul.png/revision/latest/scale-to-width/360?cb=20231012001528&path-prefix=pt" 
+                        alt="Kingsoul Ornament" 
+                        width="28" 
+                        height="28"
+                        class="ornament-img"
+                    />
                 </div>
 
                 <p class="app-tech-note">Powered by RAG + Knowledge Graph</p>

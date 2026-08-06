@@ -92,10 +92,25 @@ body {
     position: relative;
 }
 
+/* Custom Image Logo Styling */
 .logo-wrapper {
-    width: 44px;
-    height: 44px;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.app-logo-img {
+    max-width: 48px;
+    max-height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(142, 197, 255, 0.25));
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.app-logo-img:hover {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 12px rgba(142, 197, 255, 0.45));
 }
 
 .app-title {
@@ -184,6 +199,8 @@ body {
     overflow-y: auto;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
     max-height: calc(100vh - 260px);
 }
 
@@ -571,4 +588,40 @@ body {
     background-color: rgba(255, 255, 255, 0.03);
     color: var(--color-text-primary);
     font-weight: 600;
+}
+
+.music-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #1a1c23; /* Dark Hollow Knight background */
+    color: #a4a5b3; /* Pale text color */
+    border: 1px solid #4a4d5e;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace; /* Or your current chat font */
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.music-btn:hover {
+    background-color: #2a2d38;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+.ornament-img {
+    max-width: 28px;
+    max-height: 28px;
+    object-fit: contain;
+    opacity: 0.85; /* Softens the image to blend with the dark theme */
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.ornament-img:hover {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
 }

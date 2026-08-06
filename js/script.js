@@ -4,6 +4,24 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    const music = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-toggle');
+
+    // Set volume to 20% so it's a pleasant background ambiance
+    music.volume = 0.2;
+
+    musicBtn.addEventListener('click', () => {
+        if (music.paused) {
+            music.play();
+            musicBtn.innerText = '🔊';
+        } else {
+            music.pause();
+            musicBtn.innerText = '🔇';
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
     
     // ─── State Management ──────────────────────────────────────────────────────────
     let messages = [];

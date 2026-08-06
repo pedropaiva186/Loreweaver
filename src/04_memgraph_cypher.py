@@ -100,6 +100,16 @@ REGRAS CRÍTICAS:
 PERGUNTA: {pergunta}
 """
 
+def gerar_cypher_com_llm(pergunta):
+    cypher = chamar_modelo_sem_json(
+        PROMPT_TEXT2CYPHER.format(pergunta=pergunta),
+        temperature=0.0,
+        max_tokens=1024,
+    ).strip()
+    cypher = re.sub(r"^```(?:cypher)?\n|```$", "", cypher, flags=re.IGNORECASE).strip()
+    return cypher
+
+
 # Normalizando identificadores
 def sanitizar_identificador(texto: str, padrao: str = "OUTRO") -> str:
     if not texto:

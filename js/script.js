@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const SUGGESTIONS = [
-        'Me diga todos os itens que podem ser vendidos?',
+        'Me diga todos os itens que podem ser vendidos.',
         'Me diga todos os bosses e suas localizações.',
         'Quais são todas as areas do jogo?',
         'Me conte mais sobre a Hornet.',

@@ -71,45 +71,42 @@ SCHEMA DO BANCO:
 
 OBJETIVO PRINCIPAL:
 Você deve gerar consultas que maximizem o CONTEXTO NARRATIVO. 
-Sempre que consultar uma relação `[r]`, você DEVE OBRIGATORIAMENTE retornar `r.evidencia AS contexto`. É lá que está a lore rica do jogo.
+Sempre que consultar uma relação [r], você DEVE OBRIGATORIAMENTE retornar r.evidencia AS contexto. É lá que está a lore rica do jogo.
 
 REGRAS CRÍTICAS:
 1. Para perguntas do tipo "Quem é X?", "Fale sobre X" ou "História de X" (Ego Graph):
-   - Use relacionamentos NÃO-DIRECIONADOS `-[r]-` para pegar tudo que entra e sai do nó.
+   - Use relacionamentos NÃO-DIRECIONADOS -[r]- para pegar tudo que entra e sai do nó.
+   - Ex: MATCH (n)-[r]-(m) WHERE toLower(n.nome) CONTAINS "sly" RETURN n.nome AS entidade1, type(r) AS relacao, m.nome AS entidade2, r.evidencia AS contexto LIMIT 50
 2. Filtragem de Nomes (Desambiguação):
-   - NUNCA use propriedades dentro do parênteses (ex: `(:NPC {{nome: "X"}})` está ERRADO).
-   - SEMPRE use `WHERE toLower(n.nome) CONTAINS "texto"`.
+   - NUNCA use propriedades dentro do parênteses (ex: (:NPC {{nome: "X"}}) está ERRADO).
+   - SEMPRE use WHERE toLower(n.nome) CONTAINS "texto". Isso garante que "sly" encontre tanto "sly" quanto "grande sabio do ferrao sly".
 3. Sintaxe de Múltiplas Relações:
-   - O correto é `-[r:AFETA|DERROTA]-` e NUNCA `-[r:(AFETA|DERROTA)]-`.
+   - O correto é -[r:AFETA|DERROTA]- e NUNCA -[r:(AFETA|DERROTA)]-.
 4. Retorno Obrigatório:
-   - Sempre inclua `r.evidencia AS contexto` se houver uma variável de relação `r` na consulta.
-   - Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN.
+   - Sempre inclua r.evidencia AS contexto se houver uma variável de relação r na consulta.
+   - Obrigatoriamente atribua um alias com 'AS' para CADA campo no RETURN (ex: type(r) AS relacao).
 5. Formato da Resposta:
-   - Responda APENAS com o código Cypher puro, sem marcações markdown.
-6. ROTAS E CAMINHOS GEOGRÁFICOS (PATHFINDING):
-   - Memgraph NÃO suporta a função `shortestPath()` do Neo4j. NUNCA use `shortestPath()`.
-   - Para rotas geográficas, RESTRINJA a busca APENAS às relações espaciais para evitar caminhos ilógicos (ex: através de itens ou vendedores). Use `-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-`.
-   - Use `WITH p LIMIT 1` para pegar apenas o caminho mais curto encontrado.
-   - Use `UNWIND nodes(p) AS n` E `UNWIND relationships(p) AS r` para retornar os passos e a lore.
+   - Responda APENAS com o código Cypher puro. 
+   - NÃO use blocos de código Markdown (remova as crases ``` e a palavra cypher).
+6. Proteção contra Fora de Escopo (Out-of-Domain):
+    Se o usuário fizer uma pergunta que NÃO tenha relação com o universo do jogo, ou pedir códigos em outras linguagens (como Python, JavaScript, etc.), você NÃO DEVE gerar o que ele pediu e NÃO DEVE responder com texto natural.
+    Nesses casos, você deve OBRIGATORIAMENTE retornar apenas a seguinte consulta de segurança em Cypher:
+    RETURN "Fora de escopo" AS erro
 
 EXEMPLOS DE CONSULTAS CORRETAS:
 - "Quem é Sly?" ou "Fale sobre Sly":
   MATCH (n)-[r]-(m) 
   WHERE toLower(n.nome) CONTAINS "sly" 
-  RETURN n.nome AS entidade_foco, type(r) AS relacao, m.nome AS entidade_relacionada, r.evidencia AS contexto LIMIT 30
+  RETURN n.nome AS entidade_foco, type(r) AS relacao, m.nome AS entidade_relacionada, r.evidencia AS contexto LIMIT 50
+
+- "O que o vendedor vende?":
+  MATCH (v:VENDEDOR)-[r:VENDE]->(i:ITEM) 
+  RETURN v.nome AS vendedor, i.nome AS item, r.evidencia AS contexto LIMIT 15
 
 - "Quais itens são encontrados na Bacia Antiga?":
   MATCH (i:ITEM)-[r:LOCALIZADO_EM]->(l:LOCALIZACAO)
   WHERE toLower(l.nome) CONTAINS "bacia antiga"
   RETURN i.nome AS item, type(r) AS relacao, l.nome AS localizacao, r.evidencia AS contexto LIMIT 20
-
-- "Qual o caminho entre Dirtmouth e a Cidade das Lágrimas?":
-  MATCH p = (origem:LOCALIZACAO)-[:LOCALIZADO_EM|CONTEM|LEVA_A*1..6]-(destino:LOCALIZACAO)
-  WHERE toLower(origem.nome) CONTAINS "dirtmouth" AND toLower(destino.nome) CONTAINS "cidade das lagrimas"
-  WITH p LIMIT 1
-  UNWIND relationships(p) AS r
-  UNWIND nodes(p) AS n
-  RETURN DISTINCT n.nome AS passo, type(r) AS relacao, r.evidencia AS contexto LIMIT 50
 
 PERGUNTA: {pergunta}
 """

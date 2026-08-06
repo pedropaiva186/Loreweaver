@@ -3,14 +3,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from neo4j import GraphDatabase
 
-# Dynamically import the memgraph module because the filename starts with a number
+# Importa o módulo 04_memgraph_cypher.py
 m_cypher = importlib.import_module("04_memgraph_cypher")
 
 app = Flask(__name__)
-# Enable CORS so the frontend can communicate with the backend
+# Ativa o CORS para permitir a comunicação do front com o back
 CORS(app) 
 
-# Initialize the Memgraph connection globally
+# Inicializa a conexão com a database de maneira global
 try:
     driver = GraphDatabase.driver(m_cypher.URI, auth=("", ""))
     driver.verify_connectivity()
@@ -32,32 +32,32 @@ def chat():
 
     user_message = data['message']
 
-    # Verify if Memgraph is active before trying to query
+    # Verifica se o memgraph está realmente executando
     if not driver:
         return jsonify({"response": "Erro: Não foi possível conectar ao banco de dados Memgraph. Verifique se o container docker está rodando."})
 
     try:
         print(f"\n--- Nova pergunta: {user_message} ---")
         
-        # 1. Generate Cypher query via LLM
+        # 1. Geração da query cypher pela llm
         cypher_query = m_cypher.gerar_cypher_com_llm(user_message)
         print(f"Cypher Query Gerada:\n{cypher_query}")
         
-        # 2. Execute query in Memgraph
+        # 2. Execução da query
         resultados_grafo = m_cypher.executar(driver, cypher_query)
         print(f"Resultados do Grafo:\n{resultados_grafo}")
         
-        # 3. Generate final response via RAG
+        # 3. Geração da respota pela llm
         resposta_final = m_cypher.responder_pergunta_com_graphrag(user_message, resultados_grafo)
         
-        # 4. Return the actual AI response to the frontend
+        # 4. Retorna a resposta final para o front
         return jsonify({"response": resposta_final})
 
     except Exception as e:
-        # We still print the real error to the terminal so YOU can debug it
+        # Printa o erro nos logs
         print(f"Erro interno no backend (Memgraph/LLM): {e}")
         
-        # But we send a friendly, formatted message back to the frontend
+        # Retorna uma mensagem amigável para o usuário final
         mensagem_amigavel = (
             "Eu não posso responder essa pergunta. Você pode perguntar outras coisas, como: "
             "*\"Onde encontrar a chave para abrir a cidade das lágrimas?\"*"
